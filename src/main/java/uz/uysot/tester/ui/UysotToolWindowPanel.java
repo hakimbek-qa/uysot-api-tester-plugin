@@ -144,7 +144,7 @@ public class UysotToolWindowPanel {
 
         JButton updateCheckButton = new JButton("ℹ️ v" + UpdateCheckerService.CURRENT_VERSION);
         updateCheckButton.setToolTipText("Yangilanishlarni tekshirish");
-        updateCheckButton.addActionListener(e -> UpdateCheckerService.checkUpdatesInBackground(project, true));
+        updateCheckButton.addActionListener(e -> UpdateCheckerService.checkUpdates(project, mainPanel, true));
         buttonPanel.add(updateCheckButton);
 
         topPanel.add(buttonPanel);
@@ -220,7 +220,7 @@ public class UysotToolWindowPanel {
             }
         });
 
-        UpdateCheckerService.checkUpdatesInBackground(project, false);
+        UpdateCheckerService.checkUpdates(project, mainPanel, false);
     }
 
     private String getSelectedRepoUrl() {
