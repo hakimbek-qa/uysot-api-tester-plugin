@@ -14,7 +14,7 @@ public class UysotSettingsConfigurable implements Configurable {
     private JBTextField repoUrlField;
     private JBTextField clonePathField;
 
-    @Nls(capitalized = Nls.Capitalization.Title)
+    @Nls
     @Override
     public String getDisplayName() {
         return "Uysot API Tester";
