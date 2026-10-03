@@ -102,6 +102,12 @@ public class UysotToolWindowPanel {
         buttonPanel.add(runButton);
         buttonPanel.add(syncButton);
         buttonPanel.add(stopButton);
+
+        JButton updateCheckButton = new JButton("ℹ️ v" + uz.uysot.tester.service.UpdateCheckerService.CURRENT_VERSION);
+        updateCheckButton.setToolTipText("Yangilanishlarni tekshirish");
+        updateCheckButton.addActionListener(e -> uz.uysot.tester.service.UpdateCheckerService.checkUpdatesInBackground(project, true));
+        buttonPanel.add(updateCheckButton);
+
         topPanel.add(buttonPanel);
         topPanel.add(Box.createVerticalStrut(6));
 
@@ -160,6 +166,8 @@ public class UysotToolWindowPanel {
         runButton.addActionListener(e -> executeTests());
         syncButton.addActionListener(e -> executeSync());
         stopButton.addActionListener(e -> executeStop());
+
+        uz.uysot.tester.service.UpdateCheckerService.checkUpdatesInBackground(project, false);
     }
 
     private void saveSettings() {

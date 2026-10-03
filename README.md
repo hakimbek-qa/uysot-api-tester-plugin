@@ -61,3 +61,43 @@ Yig'ilgan fayl quyidagi manzilda tayyor bo'ladi:
 3. **Open API Token** ni kiriting (bir marta kiritilsa eslab qolinadi).
 4. **"🔄 Testlarni yangilash (Git Pull)"** tugmasini bosing (birinchi marta QA reponi avtomatik klonlaydi).
 5. Kerakli test to'plamini tanlab, **"▶ Ishga tushirish"** tugmasini bosing!
+
+---
+
+## 🔄 Avtomatik yangilanishlar (Custom Plugin Repository)
+
+Dasturchilar har safar `.zip` faylni qo'lda skachat qilib o'tirmasliklari uchun IntelliJ IDEA ning rasmiy **Custom Repository** mexanizmidan foydalaning:
+
+1. IntelliJ IDEA da: **Settings $\rightarrow$ Plugins $\rightarrow$ ⚙️ $\rightarrow$ Manage Plugin Repositories...** ga kiring.
+2. `+` tugmasini bosib, quyidagi havolani qo'shing:
+   ```text
+   https://raw.githubusercontent.com/hakimbek-qa/uysot-api-tester-plugin/main/updatePlugins.xml
+   ```
+3. **Bo'ldi!** Endi siz GitHub'da yangi versiya chiqarganingizda, barcha dasturchilarning IntelliJ oynasida avtomatik ravishda **"Update"** xabarnomasi chiqadi va 1 ta klik bilan yangilanadi.
+
+---
+
+## 🚀 GitHub'ga yuklash va yangi versiya chiqarish (CI/CD)
+
+Ushbu plagin loyihasini GitHub'ga joylash:
+
+```bash
+cd /Users/user/IdeaProjects/uysot-api-tester-plugin
+
+# Agar yangi repo yaratgan bo'lsangiz:
+git remote add origin https://github.com/hakimbek-qa/uysot-api-tester-plugin.git
+git push -u origin main
+```
+
+Yangi versiya (masalan, `v1.0.1`) chiqarish uchun shunchaki tag bering:
+
+```bash
+git tag v1.0.1
+git push origin v1.0.1
+```
+
+GitHub Actions avtomatik ravishda:
+1. Yangi `.zip` plaginni yig'adi.
+2. GitHub Release yaratadi.
+3. `updatePlugins.xml` faylini yangilab qo'yadi.
+4. Barcha dasturchilarning IntelliJ IDEA siga avtomatik yangilanish yetib boradi!
