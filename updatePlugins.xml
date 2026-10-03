@@ -5,13 +5,10 @@
             version="1.1.2">
         <name>Uysot Open API Tester</name>
         <description><![CDATA[
-            Backend dasturchilar uchun Uysot Open API va boshqa QA test repozitoriyalarini to'g'ridan-to'g'ri IntelliJ IDEA / PyCharm ichida ishga tushirish uchun universal vosita.
+            Backend dasturchilar uchun Uysot Open API avtomatlashtirilgan testlarini to'g'ridan-to'g'ri IntelliJ IDEA ichida ishga tushirish vositasi.
         ]]></description>
         <change-notes><![CDATA[
-            <b>Versiya 1.1.2:</b><br>
-            - Interaktiv yangilanish tekshiruvi: versiya tugmasi bosilganda to'g'ridan-to'g'ri yuklab olish yoki sozlamalarni ochish oynasi chiqadi.<br>
-            - CDN keshlashni chetlab o'tish (darhol eng yangi versiyani aniqlash).<br>
-            - X-Auth-Token, Bearer va boshqa autentifikatsiya turlarini dinamik sozlash.
+            Versiya 1.1.2 yangilanishi.
         ]]></change-notes>
         <idea-version since-build="232"/>
     </plugin>
