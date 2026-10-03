@@ -8,7 +8,11 @@
     <b>Imkoniyatlari:</b>
     <ul>
         <li>Universal QA Repozitoriyalarini ulash (Connect & Sync)</li>
-        <li>Testlarni avtomatik aniqlash (Dynamic Discovery yoki .tester.json)</li>
+        <li>AI Test Generator Prompti (ChatGPT, GitHub Copilot, Claude uchun repozitoriya qoidalariga asoslangan prompt)</li>
+        <li>Yangi test fayllarini shablon bilan yaratish va IDE muharririda ochish</li>
+        <li>Lokal test papkasini bir marta bosish bilan ochish</li>
+        <li>Yangi yozilgan lokal testlarni avtomatik aniqlash va ishga tushirish</li>
+        <li>Lokalda yozilgan testlarni bevosita Git repozitoriyasiga Commit & Push qilish</li>
         <li>Localhost (http://localhost:8080) yoki Dev/Staging serverlarini testlash</li>
         <li>Yiqilgan testlar bo'yicha to'liq ma'lumot: Request Method, URL, Params, Body, Status code va Response JSON</li>
         <li>Terminal yoki Python sozlamalari bilan bosh qotirmasdan, bitta tugma orqali testlash</li>

@@ -65,7 +65,7 @@ public class TestDiscoveryService {
         }
 
         if (configFile.exists()) {
-            DiscoveryResult fromConfig = loadFromConfig(configFile);
+            DiscoveryResult fromConfig = loadFromConfig(configFile, repoDir);
             if (fromConfig != null && !fromConfig.getSuites().isEmpty()) {
                 return fromConfig;
             }
@@ -75,7 +75,7 @@ public class TestDiscoveryService {
         return autoDiscover(repoDir);
     }
 
-    private static DiscoveryResult loadFromConfig(File configFile) {
+    private static DiscoveryResult loadFromConfig(File configFile, File repoDir) {
         try (InputStreamReader reader = new InputStreamReader(new FileInputStream(configFile), StandardCharsets.UTF_8)) {
             JsonObject json = new Gson().fromJson(reader, JsonObject.class);
             if (json == null) return null;
@@ -103,6 +103,32 @@ public class TestDiscoveryService {
             }
 
             if (!suites.isEmpty()) {
+                // Also scan repoDir for any new or unregistered test_*.py files so developers can run local tests immediately
+                if (repoDir != null && repoDir.exists()) {
+                    Set<String> registeredPaths = new HashSet<>();
+                    for (TestSuiteOption opt : suites) {
+                        if (opt.getPytestArgs() != null) {
+                            for (String part : opt.getPytestArgs().split("\\s+")) {
+                                registeredPaths.add(part.replace('\\', '/'));
+                            }
+                        }
+                    }
+
+                    List<File> localTestFiles = new ArrayList<>();
+                    findTestPyFiles(repoDir, localTestFiles);
+                    localTestFiles.sort(Comparator.comparing(File::getName));
+                    for (File f : localTestFiles) {
+                        String relPath = repoDir.toPath().relativize(f.toPath()).toString().replace('\\', '/');
+                        if (!registeredPaths.contains(relPath)) {
+                            String displayName = f.getName();
+                            if (displayName.endsWith(".py")) {
+                                displayName = displayName.substring(0, displayName.length() - 3);
+                            }
+                            suites.add(new TestSuiteOption("📄 [Lokal] " + displayName, relPath, "Yangi lokal test: " + relPath));
+                        }
+                    }
+                }
+
                 return new DiscoveryResult(suites, defaultBaseUrl, name, authType, tokenLabel);
             }
         } catch (Exception e) {

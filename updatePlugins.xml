@@ -1,14 +1,21 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <plugins>
     <plugin id="uz.uysot.api.tester"
-            url="https://github.com/hakimbek-qa/uysot-api-tester-plugin/releases/download/v1.1.2/uysot-api-tester-plugin-1.1.2.zip"
-            version="1.1.2">
+            url="https://github.com/hakimbek-qa/uysot-api-tester-plugin/releases/download/v1.2.0/uysot-api-tester-plugin-1.2.0.zip"
+            version="1.2.0">
         <name>Uysot Open API Tester</name>
         <description><![CDATA[
-            Backend dasturchilar uchun Uysot Open API avtomatlashtirilgan testlarini to'g'ridan-to'g'ri IntelliJ IDEA ichida ishga tushirish vositasi.
+            Backend dasturchilar uchun Uysot Open API avtomatlashtirilgan testlarini to'g'ridan-to'g'ri IntelliJ IDEA ichida ishga tushirish, AI orqali test yozish va Git'ga push qilish vositasi.
         ]]></description>
         <change-notes><![CDATA[
-            Versiya 1.1.2 yangilanishi.
+            <b>v1.2.0 yangilanishlari:</b>
+            <ul>
+                <li>🤖 <b>AI Prompt:</b> Repozitoriya qoidalari, arxitekturasi va namunaviy testlariga asoslangan tayyor AI prompt generatori (ChatGPT, Copilot, Claude).</li>
+                <li>➕ <b>Yangi test:</b> Bir marta bosish bilan yangi test faylini yaratish va IDE muharririda ochish.</li>
+                <li>📂 <b>Test papkasi:</b> Lokal testlar papkasini tizim fayl boshqaruvchisida darhol ochish.</li>
+                <li>🔄 <b>Lokal testlarni aniqlash:</b> Yangi qo'shilgan test fayllarini Git'ga push qilmasdan darhol lokalda ishga tushirish imkoniyati.</li>
+                <li>📤 <b>Git Push (Commit & Push):</b> Yangi yoki o'zgartirilgan testlarni to'g'ridan-to'g'ri IntelliJ orqali GitHub repozitoriyasiga push qilish dialogi.</li>
+            </ul>
         ]]></change-notes>
         <idea-version since-build="232"/>
     </plugin>

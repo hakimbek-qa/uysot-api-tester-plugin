@@ -1,11 +1,13 @@
 package uz.uysot.tester.ui;
 
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.ui.Messages;
 import com.intellij.ui.JBColor;
 import com.intellij.ui.components.*;
 import uz.uysot.tester.model.ApiErrorDetails;
 import uz.uysot.tester.model.TestRunResult;
 import uz.uysot.tester.model.TestSuiteOption;
+import uz.uysot.tester.service.AiPromptService;
 import uz.uysot.tester.service.GitSyncService;
 import uz.uysot.tester.service.TestDiscoveryService;
 import uz.uysot.tester.service.TestRunnerService;
@@ -31,6 +33,10 @@ public class UysotToolWindowPanel {
     private JButton runButton;
     private JButton stopButton;
     private JButton refreshSuitesButton;
+    private JButton aiPromptButton;
+    private JButton newTestButton;
+    private JButton openFolderButton;
+    private JButton gitPushButton;
     private JLabel statusLabel;
     private JProgressBar progressBar;
 
@@ -125,12 +131,12 @@ public class UysotToolWindowPanel {
         suitePanel.add(suiteComboBox, BorderLayout.CENTER);
 
         refreshSuitesButton = new JButton("🔄");
-        refreshSuitesButton.setToolTipText("Lokal papkadagi testlarni qayta aniqlash");
+        refreshSuitesButton.setToolTipText("Lokal papkadagi yangi va mavjud testlarni qayta aniqlash");
         suitePanel.add(refreshSuitesButton, BorderLayout.EAST);
         topPanel.add(suitePanel);
         topPanel.add(Box.createVerticalStrut(8));
 
-        // Row 5: Action Buttons
+        // Row 5: Action Buttons (Run / Stop / Version)
         JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 6, 0));
         runButton = new JButton("▶ Ishga tushirish");
         runButton.setFont(runButton.getFont().deriveFont(Font.BOLD));
@@ -150,7 +156,30 @@ public class UysotToolWindowPanel {
         topPanel.add(buttonPanel);
         topPanel.add(Box.createVerticalStrut(6));
 
-        // Row 6: Status & Progress
+        // Row 6: AI & Developer Tools Toolbar
+        JPanel devToolsPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 6, 0));
+
+        aiPromptButton = new JButton("🤖 AI Prompt");
+        aiPromptButton.setToolTipText("AI (Copilot/Claude/ChatGPT) uchun tayyor test yozish ko'rsatmasini tayyorlash");
+
+        newTestButton = new JButton("➕ Yangi test");
+        newTestButton.setToolTipText("Yangi test fayli shablonini yaratish va muharrirda ochish");
+
+        openFolderButton = new JButton("📂 Test papkasi");
+        openFolderButton.setToolTipText("Lokal testlar papkasini fayl boshqaruvchisida ochish");
+
+        gitPushButton = new JButton("📤 Git Push");
+        gitPushButton.setToolTipText("Lokalda qo'shilgan yoki o'zgartirilgan testlarni Git repozitoriyasiga push qilish");
+
+        devToolsPanel.add(aiPromptButton);
+        devToolsPanel.add(newTestButton);
+        devToolsPanel.add(openFolderButton);
+        devToolsPanel.add(gitPushButton);
+
+        topPanel.add(devToolsPanel);
+        topPanel.add(Box.createVerticalStrut(6));
+
+        // Row 7: Status & Progress
         JPanel statusPanel = new JPanel(new BorderLayout(5, 2));
         statusLabel = new JBLabel("Tayyor");
         progressBar = new JProgressBar();
@@ -210,6 +239,11 @@ public class UysotToolWindowPanel {
         stopButton.addActionListener(e -> executeStop());
         refreshSuitesButton.addActionListener(e -> loadSuitesForCurrentRepo(true));
 
+        aiPromptButton.addActionListener(e -> executeAiPrompt());
+        newTestButton.addActionListener(e -> executeNewTest());
+        openFolderButton.addActionListener(e -> executeOpenFolder());
+        gitPushButton.addActionListener(e -> executeGitPush());
+
         repoComboBox.addActionListener(e -> {
             String selected = getSelectedRepoUrl();
             if (selected != null && !selected.isEmpty()) {
@@ -261,10 +295,10 @@ public class UysotToolWindowPanel {
             authTypeComboBox.setSelectedItem(result.getAuthType());
         }
 
-        statusLabel.setText("Tayyor (" + result.getSuites().size() + " ta to'plam topildi)");
+        statusLabel.setText("Tayyor (" + result.getSuites().size() + " ta to'plam)");
         if (notifyUser) {
             JOptionPane.showMessageDialog(mainPanel,
-                    "Test to'plamlari qayta aniqlandi (" + result.getSuites().size() + " ta to'plam).",
+                    "Test to'plamlari muvaffaqiyatli aniqlandi (" + result.getSuites().size() + " ta to'plam).",
                     "Muvaffaqiyatli", JOptionPane.INFORMATION_MESSAGE);
         }
     }
@@ -320,6 +354,144 @@ public class UysotToolWindowPanel {
                     }
                 });
             }
+        });
+    }
+
+    private void executeAiPrompt() {
+        String repoUrl = getSelectedRepoUrl();
+        File repoDir = UysotSettingsState.getRepoDirectory(repoUrl);
+        if (!repoDir.exists() || !new File(repoDir, ".git").exists()) {
+            JOptionPane.showMessageDialog(mainPanel,
+                    "Repozitoriya hali lokalga yuklanmagan. Avval '🔗 Connect & Sync' tugmasini bosing.",
+                    "Repozitoriya topilmadi", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
+        Object selectedUrl = urlComboBox.getSelectedItem();
+        String baseUrl = selectedUrl != null ? selectedUrl.toString().trim() : "";
+        Object selectedAuth = authTypeComboBox.getSelectedItem();
+        String authType = selectedAuth != null ? selectedAuth.toString() : "X-Auth-Token";
+
+        String prompt = AiPromptService.generatePrompt(repoDir, baseUrl, authType);
+        AiPromptDialog dialog = new AiPromptDialog(project, prompt);
+        if (dialog.showAndGet()) {
+            consoleTextArea.append(">>> AI Prompt xotiraga nusxalandi (Clipboard).\n");
+            JOptionPane.showMessageDialog(mainPanel,
+                    "AI Prompt nusxalandi!\nUni ChatGPT, GitHub Copilot yoki Claude'ga yuboring.",
+                    "Muvaffaqiyatli", JOptionPane.INFORMATION_MESSAGE);
+        }
+    }
+
+    private void executeNewTest() {
+        String repoUrl = getSelectedRepoUrl();
+        File repoDir = UysotSettingsState.getRepoDirectory(repoUrl);
+        if (!repoDir.exists() || !new File(repoDir, ".git").exists()) {
+            JOptionPane.showMessageDialog(mainPanel,
+                    "Repozitoriya hali lokalga yuklanmagan. Avval '🔗 Connect & Sync' tugmasini bosing.",
+                    "Repozitoriya topilmadi", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
+        String testName = Messages.showInputDialog(mainPanel,
+                "Yangi test nomi yoki ssenariysini kiriting (masalan: order_creation yoki payment_flow):",
+                "➕ Yangi Test Fayli Yaratish",
+                Messages.getQuestionIcon());
+
+        if (testName == null || testName.trim().isEmpty()) {
+            return;
+        }
+
+        try {
+            File createdFile = AiPromptService.createNewTestFile(repoDir, testName.trim());
+            AiPromptService.openFileInEditor(project, createdFile);
+            loadSuitesForCurrentRepo(false);
+            consoleTextArea.append(">>> Yangi test fayli yaratildi va muharrirda ochildi: " + createdFile.getAbsolutePath() + "\n");
+            JOptionPane.showMessageDialog(mainPanel,
+                    "✅ " + createdFile.getName() + " fayli yaratildi va muharrirda ochildi!\n" +
+                            "AI yozib bergan test kodini faylga joylang va saqlang (Ctrl+S / Cmd+S).",
+                    "Fayl yaratildi", JOptionPane.INFORMATION_MESSAGE);
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(mainPanel, "Fayl yaratishda xatolik: " + ex.getMessage(), "Xatolik", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    private void executeOpenFolder() {
+        String repoUrl = getSelectedRepoUrl();
+        File repoDir = UysotSettingsState.getRepoDirectory(repoUrl);
+        if (!repoDir.exists() || !new File(repoDir, ".git").exists()) {
+            JOptionPane.showMessageDialog(mainPanel,
+                    "Repozitoriya hali lokalga yuklanmagan. Avval '🔗 Connect & Sync' tugmasini bosing.",
+                    "Repozitoriya topilmadi", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
+        AiPromptService.openRepoInFileManager(repoDir);
+        consoleTextArea.append(">>> Lokal test papkasi ochildi: " + repoDir.getAbsolutePath() + "\n");
+    }
+
+    private void executeGitPush() {
+        String repoUrl = getSelectedRepoUrl();
+        File repoDir = UysotSettingsState.getRepoDirectory(repoUrl);
+        if (!repoDir.exists() || !new File(repoDir, ".git").exists()) {
+            JOptionPane.showMessageDialog(mainPanel,
+                    "Repozitoriya hali lokalga yuklanmagan. Avval '🔗 Connect & Sync' tugmasini bosing.",
+                    "Repozitoriya topilmadi", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
+        setRunningState(true, "Git holati tekshirilmoqda...");
+        consoleTextArea.append("\n>>> Git o'zgarishlari tekshirilmoqda...\n");
+
+        GitSyncService.getChangedFiles(project, repoDir, (success, files, error) -> {
+            SwingUtilities.invokeLater(() -> {
+                setRunningState(false, "Tayyor");
+                if (!success) {
+                    JOptionPane.showMessageDialog(mainPanel,
+                            "Git status tekshirishda xatolik: " + error,
+                            "Xatolik", JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
+
+                if (files.isEmpty()) {
+                    JOptionPane.showMessageDialog(mainPanel,
+                            "Hech qanday o'zgarish topilmadi.\nBarcha testlar Git repozitoriyasi bilan to'liq sinxronlashgan.",
+                            "O'zgarishlar yo'q", JOptionPane.INFORMATION_MESSAGE);
+                    return;
+                }
+
+                GitCommitPushDialog dialog = new GitCommitPushDialog(project, files);
+                if (dialog.showAndGet()) {
+                    List<String> selectedPaths = dialog.getSelectedFilePaths();
+                    String commitMsg = dialog.getCommitMessage();
+
+                    setRunningState(true, "Git'ga push qilinmoqda...");
+                    consoleTextArea.append(">>> Tanlangan fayllar: " + selectedPaths + "\n");
+                    consoleTextArea.append(">>> Commit xabari: " + commitMsg + "\n");
+
+                    GitSyncService.commitAndPush(project, repoDir, repoUrl, selectedPaths, commitMsg, new GitSyncService.CommitPushCallback() {
+                        @Override
+                        public void onOutput(String line) {
+                            SwingUtilities.invokeLater(() -> consoleTextArea.append(line + "\n"));
+                        }
+
+                        @Override
+                        public void onComplete(boolean pushSuccess, String message) {
+                            SwingUtilities.invokeLater(() -> {
+                                setRunningState(false, message);
+                                consoleTextArea.append(">>> " + message + "\n");
+                                if (pushSuccess) {
+                                    loadSuitesForCurrentRepo(false);
+                                    JOptionPane.showMessageDialog(mainPanel,
+                                            "✅ O'zgarishlar muvaffaqiyatli Git repozitoriyasiga push qilindi!",
+                                            "Muvaffaqiyatli", JOptionPane.INFORMATION_MESSAGE);
+                                } else {
+                                    JOptionPane.showMessageDialog(mainPanel, message, "Xatolik", JOptionPane.ERROR_MESSAGE);
+                                }
+                            });
+                        }
+                    });
+                }
+            });
         });
     }
 
@@ -381,6 +553,9 @@ public class UysotToolWindowPanel {
         runButton.setEnabled(!running);
         stopButton.setEnabled(running);
         refreshSuitesButton.setEnabled(!running);
+        aiPromptButton.setEnabled(!running);
+        newTestButton.setEnabled(!running);
+        gitPushButton.setEnabled(!running);
         progressBar.setVisible(running);
         progressBar.setIndeterminate(running);
         statusLabel.setText(text);

@@ -1,6 +1,6 @@
 # Uysot API Tester - Universal IntelliJ IDEA & PyCharm Plugini
 
-Backend dasturchilar uchun Uysot Open API va boshqa xizmatlarning avtomatlashtirilgan testlarini to'g'ridan-to'g'ri **IntelliJ IDEA** yoki **PyCharm** ichida ishga tushirish, mahalliy serverni (`http://localhost:8080`) sinash va xatoliklarni tahlil qilish uchun mo'ljallangan universal plagin.
+Backend dasturchilar uchun Uysot Open API va boshqa xizmatlarning avtomatlashtirilgan testlarini to'g'ridan-to'g'ri **IntelliJ IDEA** yoki **PyCharm** ichida ishga tushirish, AI (ChatGPT, GitHub Copilot, Claude) yordamida testlar yozish, lokalda tekshirish va Git repozitoriyasiga push qilish uchun mo'ljallangan universal plagin.
 
 ---
 
@@ -10,11 +10,27 @@ Backend dasturchilar uchun Uysot Open API va boshqa xizmatlarning avtomatlashtir
    - Istalgan QA test Git repozitoriyasini ulash (`https://github.com/...`).
    - Repozitoriyadagi testlarni avtomatik aniqlash (Dynamic Discovery) yoki `.tester.json` konfiguratsiyasidan o'qish.
    - Har bir loyiha o'zining alohida kesh papkasiga (`~/.uysot_tester_repos/<repo_nomi>`) tushadi.
-2. **Mahalliy backendni (`localhost`) testlash:**
-   - Dasturchi kodini git'ga push qilmasdan turib, o'z kompyuteridagi `http://localhost:8080`, `localhost:8000` yoki masofaviy dev/staging serverlarini testdan o'tkazishi mumkin.
-3. **Standart Bearer Token autentifikatsiyasi:**
-   - Token kiritiladi va test muhitiga avtomatik ravishda `OPEN_API_TOKEN`, `AUTH_TOKEN` va `BEARER_TOKEN` orqali uzatiladi.
-4. **Xatoliklarni aniq tahlil qilish:**
+
+2. **🤖 AI Test Prompt Generator:**
+   - Ulangan repozitoriya talablari, arxitekturasi, autentifikatsiya turi (`X-Auth-Token` yoki `Bearer`), yordamchi modullari (`check_success`, `wait_request`) va namunaviy test kodiga asoslangan tayyor AI prompt yaratish.
+   - ChatGPT, GitHub Copilot yoki Claude'ga bir zumda nusxalab yuborish.
+
+3. **➕ Yangi Test Faylini Yaratish:**
+   - Bir tugma orqali yangi test faylini (`test_<nomi>.py`) to'g'ri papkada shablon bilan yaratish.
+   - Fayl avtomatik ravishda IDE muharririda ochiladi — AI bergan kodni joylash va saqlash kifoya.
+
+4. **📂 Lokal Test Papkasi:**
+   - Dasturchi QA loyihasini alohida clone qilib yurmasdan, bitta tugma bilan uning lokal papkasini fayl boshqaruvchisida (Finder / Explorer) ochishi mumkin.
+
+5. **🔄 Lokal Testlarni Darhol Aniqlash va Sinash:**
+   - Yangi yozilgan `test_*.py` fayllari Git'ga push qilinmasdan avval ro'yxatda paydo bo'ladi.
+   - Dasturchi o'zining mahalliy serverida (`http://localhost:8080`, `localhost:8000`) testni to'liq tekshirib olishi mumkin.
+
+6. **📤 O'rnatilgan Git Push (Commit & Push dialogi):**
+   - Testlar muvaffaqiyatli o'tgach, bitta tugma orqali o'zgartirilgan va yangi qo'shilgan fayllarni tanlash.
+   - Commit xabarini kiritish va IntelliJ'ning saqlangan GitHub hisobi orqali to'g'ridan-to'g'ri masofaviy repozitoriyaga push qilish (terminal yoki parol kiritish shart emas).
+
+7. **Xatoliklarni aniq tahlil qilish:**
    - Yiqilgan test tanlanganda:
      - 📌 **So'rov:** `POST /v1/open-api/lead`
      - 🔍 **Parametrlar:** `?page=1`
@@ -41,14 +57,14 @@ IntelliJ IDEA yoki PyCharm da:
 
 ---
 
-## 🚀 Qanday ishlatiladi?
+## 🚀 Qanday ishlatiladi? (AI orqali test yozish oqimi)
 
 1. IDE ning o'ng panelida **"Uysot API Tester"** yorlig'ini bosing.
-2. **QA Repozitoriyasi** maydoniga Git linkni kiriting (standart: `https://github.com/hakimbek-qa/uysot-open-api-automation.git`).
-3. **"🔗 Connect & Sync"** tugmasini bosing (repo yuklanadi va testlar dinamik aniqlanadi).
-4. **Server Base URL** ni tanlang (`http://localhost:8080`).
-5. **Bearer Token** ni kiriting.
-6. Kerakli test to'plamini tanlab, **"▶ Ishga tushirish"** tugmasini bosing!
+2. **"🔗 Connect & Sync"** tugmasini bosing.
+3. **"🤖 AI Prompt"** tugmasini bosib, tayyor ko'rsatmani ChatGPT / Copilot / Claude'ga yuboring va test kodini oling.
+4. **"➕ Yangi test"** tugmasini bosib fayl oching va olingan test kodini unga joylang (`Ctrl + S`).
+5. **"🎯 Test to'plami"** ro'yxatidan yangi testni tanlang va **"▶ Ishga tushirish"** orqali tekshiring.
+6. Hamma testlar yashil (✅) bo'lgach, **"📤 Git Push"** tugmasi orqali o'zgarishlarni QA repozitoriyasiga push qiling!
 
 ---
 
@@ -58,33 +74,33 @@ Test repozitoriyasining root qismiga `.tester.json` fayli joylansa, plagin testl
 
 ```json
 {
-  "name": "Mening Servisim API Testlari",
-  "defaultBaseUrl": "http://localhost:8080",
-  "authType": "bearer",
-  "tokenEnv": "OPEN_API_TOKEN",
+  "name": "Uysot Open API Testlari",
+  "defaultBaseUrl": "https://openapi.app-dev.uysot.uz",
+  "authType": "X-Auth-Token",
+  "tokenLabel": "X-Auth-Token",
   "suites": [
     {
       "name": "🚀 Barcha testlar",
-      "params": "tests",
+      "params": "pytest_uysot",
       "description": "Barcha testlarni to'liq ishga tushirish"
     },
     {
-      "name": "👤 Autentifikatsiya flow",
-      "params": "tests/test_auth.py",
-      "description": "Login, register va profil testlari"
+      "name": "👤 Lid flow",
+      "params": "pytest_uysot/test_lead_flow.py",
+      "description": "Lid yaratish va boshqarish testlari"
     }
   ]
 }
 ```
 
-*Agar `.tester.json` bo'lmasa, plagin repodagi barcha `test_*.py` fayllari va papkalarni avtomatik o'zi topib ro'yxatga chiqaradi.*
+*Agar yangi test fayllari qo'shilsa, plagin ularni avtomatik tarzda aniqlaydi va ro'yxatda `📄 [Lokal]` belgisi bilan ko'rsatadi.*
 
 ---
 
 ## 🚀 Yangi versiya chiqarish (CI/CD)
 
 ```bash
-git tag v1.1.0
-git push origin v1.1.0
+git tag v1.2.0
+git push origin v1.2.0
 ```
-GitHub Actions avtomatik yig'ib, reliz yaratadi va barcha foydalanuvchilarga yangilanish yetkazadi.
+GitHub Actions avtomatik ravishda plaginni yig'ib, reliz yaratadi va `updatePlugins.xml` orqali yangilanishni barcha dasturchilarga yetkazadi.
