@@ -25,6 +25,7 @@ public class UysotToolWindowPanel {
     private JComboBox<String> repoComboBox;
     private JButton connectButton;
     private JComboBox<String> urlComboBox;
+    private JComboBox<String> authTypeComboBox;
     private JPasswordField tokenField;
     private JComboBox<TestSuiteOption> suiteComboBox;
     private JButton runButton;
@@ -95,11 +96,24 @@ public class UysotToolWindowPanel {
         topPanel.add(urlPanel);
         topPanel.add(Box.createVerticalStrut(6));
 
-        // Row 3: Bearer Token
+        // Row 3: Auth Token (X-Auth-Token / Bearer / etc.)
         JPanel tokenPanel = new JPanel(new BorderLayout(5, 5));
-        tokenPanel.add(new JBLabel("🔑 Bearer Token:      "), BorderLayout.WEST);
+        JPanel authLabelPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 4, 0));
+        authLabelPanel.add(new JBLabel("🔑 Auth Token:"));
+        authTypeComboBox = new JComboBox<>(new String[]{
+                "X-Auth-Token",
+                "Bearer",
+                "X-Open-Api-Token",
+                "API Key"
+        });
+        if (settings.authType != null && !settings.authType.isEmpty()) {
+            authTypeComboBox.setSelectedItem(settings.authType);
+        }
+        authLabelPanel.add(authTypeComboBox);
+        tokenPanel.add(authLabelPanel, BorderLayout.WEST);
+
         tokenField = new JPasswordField(settings.token, 20);
-        tokenField.setToolTipText("Open API / Backend autentifikatsiya Bearer tokeni");
+        tokenField.setToolTipText("Open API / Backend autentifikatsiya tokeni");
         tokenPanel.add(tokenField, BorderLayout.CENTER);
         topPanel.add(tokenPanel);
         topPanel.add(Box.createVerticalStrut(6));
@@ -243,6 +257,10 @@ public class UysotToolWindowPanel {
             urlComboBox.setSelectedItem(result.getDefaultBaseUrl());
         }
 
+        if (result.getAuthType() != null && !result.getAuthType().isEmpty()) {
+            authTypeComboBox.setSelectedItem(result.getAuthType());
+        }
+
         statusLabel.setText("Tayyor (" + result.getSuites().size() + " ta to'plam topildi)");
         if (notifyUser) {
             JOptionPane.showMessageDialog(mainPanel,
@@ -261,6 +279,10 @@ public class UysotToolWindowPanel {
         Object selectedUrl = urlComboBox.getSelectedItem();
         if (selectedUrl != null) {
             settings.baseUrl = selectedUrl.toString().trim();
+        }
+        Object selectedAuth = authTypeComboBox.getSelectedItem();
+        if (selectedAuth != null) {
+            settings.authType = selectedAuth.toString();
         }
         settings.token = new String(tokenField.getPassword()).trim();
         settings.selectedSuiteIndex = suiteComboBox.getSelectedIndex();

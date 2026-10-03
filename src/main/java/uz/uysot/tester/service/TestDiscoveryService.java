@@ -21,11 +21,15 @@ public class TestDiscoveryService {
         private final List<TestSuiteOption> suites;
         private final String defaultBaseUrl;
         private final String manifestName;
+        private final String authType;
+        private final String tokenLabel;
 
-        public DiscoveryResult(List<TestSuiteOption> suites, String defaultBaseUrl, String manifestName) {
+        public DiscoveryResult(List<TestSuiteOption> suites, String defaultBaseUrl, String manifestName, String authType, String tokenLabel) {
             this.suites = suites;
             this.defaultBaseUrl = defaultBaseUrl;
             this.manifestName = manifestName;
+            this.authType = authType != null ? authType : "X-Auth-Token";
+            this.tokenLabel = tokenLabel != null ? tokenLabel : "X-Auth-Token";
         }
 
         public List<TestSuiteOption> getSuites() {
@@ -39,11 +43,19 @@ public class TestDiscoveryService {
         public String getManifestName() {
             return manifestName;
         }
+
+        public String getAuthType() {
+            return authType;
+        }
+
+        public String getTokenLabel() {
+            return tokenLabel;
+        }
     }
 
     public static DiscoveryResult discover(File repoDir) {
         if (repoDir == null || !repoDir.exists()) {
-            return new DiscoveryResult(TestSuiteOption.getDefaultSuites(), null, null);
+            return new DiscoveryResult(TestSuiteOption.getDefaultSuites(), null, null, "X-Auth-Token", "X-Auth-Token (Open API)");
         }
 
         // 1. Check for .tester.json or tester-config.json
@@ -70,6 +82,8 @@ public class TestDiscoveryService {
 
             String name = json.has("name") ? json.get("name").getAsString() : null;
             String defaultBaseUrl = json.has("defaultBaseUrl") ? json.get("defaultBaseUrl").getAsString() : null;
+            String authType = json.has("authType") ? json.get("authType").getAsString() : "X-Auth-Token";
+            String tokenLabel = json.has("tokenLabel") ? json.get("tokenLabel").getAsString() : authType;
 
             List<TestSuiteOption> suites = new ArrayList<>();
             if (json.has("suites") && json.get("suites").isJsonArray()) {
@@ -89,7 +103,7 @@ public class TestDiscoveryService {
             }
 
             if (!suites.isEmpty()) {
-                return new DiscoveryResult(suites, defaultBaseUrl, name);
+                return new DiscoveryResult(suites, defaultBaseUrl, name, authType, tokenLabel);
             }
         } catch (Exception e) {
             LOG.warn("Error reading tester config: " + configFile.getAbsolutePath(), e);
@@ -99,6 +113,16 @@ public class TestDiscoveryService {
 
     private static DiscoveryResult autoDiscover(File repoDir) {
         List<TestSuiteOption> suites = new ArrayList<>();
+
+        // Detect default auth type for this repo
+        String authType = "X-Auth-Token";
+        String tokenLabel = "X-Auth-Token (Open API)";
+
+        String repoDirName = repoDir.getName().toLowerCase();
+        if (!repoDirName.contains("uysot") && !repoDirName.contains("open-api") && !repoDirName.contains("openapi")) {
+            authType = "Bearer";
+            tokenLabel = "Bearer Token";
+        }
 
         // Potential test folders
         List<String> candidateDirNames = Arrays.asList("pytest_uysot", "tests", "test", "api_tests");
@@ -184,10 +208,10 @@ public class TestDiscoveryService {
         }
 
         if (suites.isEmpty()) {
-            return new DiscoveryResult(TestSuiteOption.getDefaultSuites(), null, null);
+            return new DiscoveryResult(TestSuiteOption.getDefaultSuites(), null, null, authType, tokenLabel);
         }
 
-        return new DiscoveryResult(suites, null, null);
+        return new DiscoveryResult(suites, null, null, authType, tokenLabel);
     }
 
     private static void addMarkerIfValid(String markerLine, List<TestSuiteOption> suites) {

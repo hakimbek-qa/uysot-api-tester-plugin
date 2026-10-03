@@ -1,14 +1,17 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <plugins>
     <plugin id="uz.uysot.api.tester"
-            url="https://github.com/hakimbek-qa/uysot-api-tester-plugin/releases/download/v1.1.0/uysot-api-tester-plugin-1.1.0.zip"
-            version="1.1.0">
+            url="https://github.com/hakimbek-qa/uysot-api-tester-plugin/releases/download/v1.1.1/uysot-api-tester-plugin-1.1.1.zip"
+            version="1.1.1">
         <name>Uysot Open API Tester</name>
         <description><![CDATA[
-            Backend dasturchilar uchun Uysot Open API avtomatlashtirilgan testlarini to'g'ridan-to'g'ri IntelliJ IDEA ichida ishga tushirish vositasi.
+            Backend dasturchilar uchun Uysot Open API va boshqa QA test repozitoriyalarini to'g'ridan-to'g'ri IntelliJ IDEA / PyCharm ichida ishga tushirish uchun universal vosita.
         ]]></description>
         <change-notes><![CDATA[
-            Versiya 1.1.0 yangilanishi.
+            <b>Versiya 1.1.1:</b><br>
+            - X-Auth-Token, Bearer, X-Open-Api-Token va boshqa auth turlari o'rtasida tanlash / dinamik aniqlash imkoniyati qo'shildi.<br>
+            - Open API testlari uchun X-Auth-Token avtomatik sozlanadi.<br>
+            - Universal token eksporti: TOKEN, X_AUTH_TOKEN, OPEN_API_TOKEN, BEARER_TOKEN.
         ]]></change-notes>
         <idea-version since-build="232"/>
     </plugin>

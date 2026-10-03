@@ -24,6 +24,7 @@ public class UysotSettingsState implements PersistentStateComponent<UysotSetting
     public List<String> recentRepoUrls = new ArrayList<>();
     public String baseUrl = "https://openapi.app-dev.uysot.uz";
     public String token = "";
+    public String authType = "X-Auth-Token";
     public String clonePath = "";
     public int selectedSuiteIndex = 0;
 
