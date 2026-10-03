@@ -23,14 +23,14 @@ import java.util.regex.Pattern;
 
 public class UpdateCheckerService {
     private static final Logger LOG = Logger.getInstance(UpdateCheckerService.class);
-    public static final String CURRENT_VERSION = "1.2.1";
+    public static final String CURRENT_VERSION = "1.2.2";
     public static final String UPDATE_XML_URL = "https://raw.githubusercontent.com/hakimbek-qa/uysot-api-tester-plugin/main/updatePlugins.xml";
     public static final String RELEASES_PAGE_URL = "https://github.com/hakimbek-qa/uysot-api-tester-plugin/releases";
 
     public static void checkUpdates(Project project, Component parentComponent, boolean interactive) {
         new Thread(() -> {
             try {
-                // Add timestamp query parameter to bypass Fastly/GitHub CDN 5-minute cache
+                // Add timestamp query parameter to bypass Fastly/GitHub CDN cache
                 String bypassUrl = UPDATE_XML_URL + "?t=" + System.currentTimeMillis();
                 URL url = new URL(bypassUrl);
                 HttpURLConnection conn = (HttpURLConnection) url.openConnection();
@@ -38,6 +38,9 @@ public class UpdateCheckerService {
                 conn.setReadTimeout(6000);
                 conn.setRequestMethod("GET");
                 conn.setRequestProperty("User-Agent", "UysotApiTesterPlugin/" + CURRENT_VERSION);
+
+                String latestVersion = null;
+                String downloadUrl = null;
 
                 if (conn.getResponseCode() == 200) {
                     StringBuilder sb = new StringBuilder();
@@ -49,81 +52,99 @@ public class UpdateCheckerService {
                     }
 
                     String xml = sb.toString();
-                    Matcher versionMatcher = Pattern.compile("version=\"([^\"]+)\"").matcher(xml);
-                    Matcher urlMatcher = Pattern.compile("url=\"([^\"]+)\"").matcher(xml);
+                    // Remove XML prolog (<?xml ... ?>) so version="1.0" in XML header is never matched as plugin version
+                    String cleanXml = xml.replaceFirst("(?s)<\\?xml[^>]*\\?>", "");
 
-                    String latestVersion = versionMatcher.find() ? versionMatcher.group(1).trim() : null;
-                    String downloadUrl = urlMatcher.find() ? urlMatcher.group(1).trim() : null;
+                    Matcher vm1 = Pattern.compile("<plugin[^>]*?\\bversion=\"([^\"]+)\"").matcher(cleanXml);
+                    if (vm1.find()) {
+                        latestVersion = vm1.group(1).trim();
+                    } else {
+                        Matcher vm2 = Pattern.compile("version=\"([^\"]+)\"").matcher(cleanXml);
+                        if (vm2.find()) {
+                            latestVersion = vm2.group(1).trim();
+                        }
+                    }
 
-                    if (latestVersion != null && isNewerVersion(latestVersion, CURRENT_VERSION)) {
-                        SwingUtilities.invokeLater(() -> {
-                            String message = "🚀 Yangi versiya topildi!\n\n"
-                                    + "Hozirgi versiya: v" + CURRENT_VERSION + "\n"
-                                    + "Eng so'nggi versiya: v" + latestVersion + "\n\n"
-                                    + "Yangilanishni qanday o'rnatmoqchisiz?";
+                    Matcher um1 = Pattern.compile("<plugin[^>]*?\\burl=\"([^\"]+)\"").matcher(cleanXml);
+                    if (um1.find()) {
+                        downloadUrl = um1.group(1).trim();
+                    } else {
+                        Matcher um2 = Pattern.compile("url=\"([^\"]+)\"").matcher(cleanXml);
+                        if (um2.find()) {
+                            downloadUrl = um2.group(1).trim();
+                        }
+                    }
+                }
 
-                            Object[] options = {"🌐 Brauzerda yuklab olish (.zip)", "⚙️ Plugins oynasini ochish", "Yopish"};
-                            int choice = JOptionPane.showOptionDialog(
-                                    parentComponent,
-                                    message,
-                                    "Yangi versiya: v" + latestVersion,
-                                    JOptionPane.YES_NO_CANCEL_OPTION,
-                                    JOptionPane.INFORMATION_MESSAGE,
-                                    null,
-                                    options,
-                                    options[0]
-                            );
+                // Fallback to GitHub API if latestVersion not found or was invalid
+                if (latestVersion == null || latestVersion.equals("1.0")) {
+                    String ghVersion = fetchLatestVersionFromGitHubApi();
+                    if (ghVersion != null) {
+                        latestVersion = ghVersion;
+                        if (downloadUrl == null) {
+                            downloadUrl = "https://github.com/hakimbek-qa/uysot-api-tester-plugin/releases/download/v" + ghVersion + "/uysot-api-tester-plugin-" + ghVersion + ".zip";
+                        }
+                    }
+                }
 
-                            if (choice == 0) {
-                                String targetUrl = (downloadUrl != null && !downloadUrl.isEmpty())
-                                        ? downloadUrl
-                                        : RELEASES_PAGE_URL;
-                                BrowserUtil.browse(targetUrl);
-                            } else if (choice == 1) {
-                                ShowSettingsUtil.getInstance().showSettingsDialog(project, "Plugins");
-                            }
-                        });
+                final String finalLatestVersion = latestVersion;
+                final String finalDownloadUrl = downloadUrl;
 
-                        Notification notification = new Notification(
-                                "Uysot Notifications",
-                                "🚀 Uysot API Tester: Yangi versiya mavjud!",
-                                "Yangi versiya chiqdi: v" + latestVersion + " (Hozirgi: v" + CURRENT_VERSION + ").",
-                                NotificationType.INFORMATION
+                if (finalLatestVersion != null && isNewerVersion(finalLatestVersion, CURRENT_VERSION)) {
+                    SwingUtilities.invokeLater(() -> {
+                        String message = "🚀 Yangi versiya topildi!\n\n"
+                                + "Hozirgi versiya: v" + CURRENT_VERSION + "\n"
+                                + "Eng so'nggi versiya: v" + finalLatestVersion + "\n\n"
+                                + "Yangilanishni qanday o'rnatmoqchisiz?";
+
+                        Object[] options = {"🌐 Brauzerda yuklab olish (.zip)", "⚙️ Plugins oynasini ochish", "Yopish"};
+                        int choice = JOptionPane.showOptionDialog(
+                                parentComponent,
+                                message,
+                                "Yangi versiya: v" + finalLatestVersion,
+                                JOptionPane.YES_NO_CANCEL_OPTION,
+                                JOptionPane.INFORMATION_MESSAGE,
+                                null,
+                                options,
+                                options[0]
                         );
 
-                        notification.addAction(new NotificationAction("Yangilanishni ko'rish") {
-                            @Override
-                            public void actionPerformed(@NotNull AnActionEvent e, @NotNull Notification notification) {
-                                BrowserUtil.browse(RELEASES_PAGE_URL);
-                            }
-                        });
+                        if (choice == 0) {
+                            String targetUrl = (finalDownloadUrl != null && !finalDownloadUrl.isEmpty())
+                                    ? finalDownloadUrl
+                                    : RELEASES_PAGE_URL;
+                            BrowserUtil.browse(targetUrl);
+                        } else if (choice == 1) {
+                            ShowSettingsUtil.getInstance().showSettingsDialog(project, "Plugins");
+                        }
+                    });
 
-                        Notifications.Bus.notify(notification, project);
-                        return;
-                    }
+                    Notification notification = new Notification(
+                            "Uysot Notifications",
+                            "🚀 Uysot API Tester: Yangi versiya mavjud!",
+                            "Yangi versiya chiqdi: v" + finalLatestVersion + " (Hozirgi: v" + CURRENT_VERSION + ").",
+                            NotificationType.INFORMATION
+                    );
 
-                    if (interactive) {
-                        SwingUtilities.invokeLater(() -> {
-                            JOptionPane.showMessageDialog(
-                                    parentComponent,
-                                    "✅ Sizda eng so'nggi versiya (v" + CURRENT_VERSION + ") o'rnatilgan!\n\n"
-                                    + "GitHub'dagi eng so'nggi reliz: v" + (latestVersion != null ? latestVersion : CURRENT_VERSION),
-                                    "Uysot API Tester",
-                                    JOptionPane.INFORMATION_MESSAGE
-                            );
-                        });
-                    }
+                    notification.addAction(new NotificationAction("Yangilanishni ko'rish") {
+                        @Override
+                        public void actionPerformed(@NotNull AnActionEvent e, @NotNull Notification notification) {
+                            BrowserUtil.browse(RELEASES_PAGE_URL);
+                        }
+                    });
+
+                    Notifications.Bus.notify(notification, project);
                     return;
                 }
 
-                int responseCode = conn.getResponseCode();
                 if (interactive) {
                     SwingUtilities.invokeLater(() -> {
                         JOptionPane.showMessageDialog(
                                 parentComponent,
-                                "Serverdan javob olinmadi (HTTP " + responseCode + ").\nIltimos, internet aloqasini tekshiring.",
-                                "Xatolik",
-                                JOptionPane.WARNING_MESSAGE
+                                "✅ Sizda eng so'nggi versiya (v" + CURRENT_VERSION + ") o'rnatilgan!\n\n"
+                                        + "GitHub'dagi eng so'nggi reliz: v" + (finalLatestVersion != null ? finalLatestVersion : CURRENT_VERSION),
+                                "Uysot API Tester",
+                                JOptionPane.INFORMATION_MESSAGE
                         );
                     });
                 }
@@ -144,13 +165,37 @@ public class UpdateCheckerService {
         }).start();
     }
 
+    private static String fetchLatestVersionFromGitHubApi() {
+        try {
+            URL url = new URL("https://api.github.com/repos/hakimbek-qa/uysot-api-tester-plugin/releases/latest");
+            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+            conn.setConnectTimeout(4000);
+            conn.setReadTimeout(4000);
+            conn.setRequestMethod("GET");
+            conn.setRequestProperty("User-Agent", "UysotApiTesterPlugin");
+            if (conn.getResponseCode() == 200) {
+                try (BufferedReader r = new BufferedReader(new InputStreamReader(conn.getInputStream(), StandardCharsets.UTF_8))) {
+                    StringBuilder b = new StringBuilder();
+                    String line;
+                    while ((line = r.readLine()) != null) b.append(line);
+                    Matcher m = Pattern.compile("\"tag_name\"\\s*:\\s*\"v?([^\"]+)\"").matcher(b.toString());
+                    if (m.find()) {
+                        return m.group(1).trim();
+                    }
+                }
+            }
+        } catch (Exception ignored) {}
+        return null;
+    }
+
     public static void checkUpdatesInBackground(Project project, boolean notifyIfUpToDate) {
         checkUpdates(project, null, notifyIfUpToDate);
     }
 
     private static boolean isNewerVersion(String latest, String current) {
-        String[] lParts = latest.split("\\.");
-        String[] cParts = current.split("\\.");
+        if (latest == null || current == null) return false;
+        String[] lParts = latest.replace("v", "").split("\\.");
+        String[] cParts = current.replace("v", "").split("\\.");
         int len = Math.max(lParts.length, cParts.length);
 
         for (int i = 0; i < len; i++) {

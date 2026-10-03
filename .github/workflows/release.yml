@@ -64,7 +64,7 @@ jobs:
           repo = os.environ['REPO']
           url = f"https://github.com/{repo}/releases/download/v{version}/uysot-api-tester-plugin-{version}.zip"
 
-          xml_content = f"""<?xml version="1.0" encoding="UTF-8"?>
+          xml_content = f"""<?xml version='1.0' encoding="UTF-8"?>
           <plugins>
               <plugin id="uz.uysot.api.tester"
                       url="{url}"
