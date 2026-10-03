@@ -177,7 +177,7 @@ public class UysotToolWindowPanel {
         setRunningState(true, "Testlar yangilanmoqda (Git Sync)...");
         consoleTextArea.append("\n>>> Git sync boshlandi...\n");
 
-        GitSyncService.syncRepository(new GitSyncService.SyncCallback() {
+        GitSyncService.syncRepository(project, new GitSyncService.SyncCallback() {
             @Override
             public void onOutput(String line) {
                 SwingUtilities.invokeLater(() -> consoleTextArea.append(line + "\n"));

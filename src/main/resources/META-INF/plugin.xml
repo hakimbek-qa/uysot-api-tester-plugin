@@ -16,6 +16,7 @@
     ]]></description>
 
     <depends>com.intellij.modules.platform</depends>
+    <depends>git4idea</depends>
 
     <extensions defaultExtensionNs="com.intellij">
         <toolWindow id="Uysot API Tester"
