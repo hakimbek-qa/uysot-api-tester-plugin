@@ -1,0 +1,33 @@
+<idea-plugin>
+    <id>uz.uysot.api.tester</id>
+    <name>Uysot Open API Tester</name>
+    <vendor email="hakimbek.qa@softex.uz" url="https://uysot.uz">Uysot QA Team</vendor>
+
+    <description><![CDATA[
+    <b>Uysot Open API Tester</b> - Backend dasturchilar uchun Uysot Open API avtomatlashtirilgan testlarini to'g'ridan-to'g'ri IntelliJ IDEA ichida ishga tushirish va natijalarni tahlil qilish vositasi.<br><br>
+    <b>Imkoniyatlari:</b>
+    <ul>
+        <li>Localhost (masalan http://localhost:8080) yoki Dev/Staging serverlarini testlash</li>
+        <li>QA test repozitoriyasini avtomatik yuklab olish va yangilash (Git Clone / Pull)</li>
+        <li>Kerakli test to'plamini tanlab ishga tushirish (Lid flow, To'lov flow, Shartnomalar va h.k.)</li>
+        <li>Yiqilgan testlar bo'yicha to'liq ma'lumot: Request Method, URL, Params, Body, Status code va Response JSON</li>
+        <li>Terminal yoki Python sozlamalari bilan bosh qotirmasdan, bitta tugma orqali testlash</li>
+    </ul>
+    ]]></description>
+
+    <depends>com.intellij.modules.platform</depends>
+
+    <extensions defaultExtensionNs="com.intellij">
+        <toolWindow id="Uysot API Tester"
+                    anchor="right"
+                    icon="AllIcons.Toolwindows.ToolWindowInspection"
+                    factoryClass="uz.uysot.tester.ui.UysotToolWindowFactory"/>
+
+        <applicationService serviceImplementation="uz.uysot.tester.state.UysotSettingsState"/>
+
+        <applicationConfigurable parentId="tools"
+                                 instance="uz.uysot.tester.ui.UysotSettingsConfigurable"
+                                 id="uz.uysot.tester.settings"
+                                 displayName="Uysot API Tester"/>
+    </extensions>
+</idea-plugin>
