@@ -38,10 +38,10 @@ tasks {
     }
 
     signPlugin {
-        enabled.set(false)
+        enabled = false
     }
 
     publishPlugin {
-        enabled.set(false)
+        enabled = false
     }
 }
