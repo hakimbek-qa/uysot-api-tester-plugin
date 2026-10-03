@@ -1,15 +1,20 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <plugins>
     <plugin id="uz.uysot.api.tester"
-            url="https://github.com/hakimbek-qa/uysot-api-tester-plugin/releases/download/v1.0.0/uysot-api-tester-plugin-1.0.0.zip"
-            version="1.0.0">
+            url="https://github.com/hakimbek-qa/uysot-api-tester-plugin/releases/download/v1.1.0/uysot-api-tester-plugin-1.1.0.zip"
+            version="1.1.0">
         <name>Uysot Open API Tester</name>
         <description><![CDATA[
-            Backend dasturchilar uchun Uysot Open API avtomatlashtirilgan testlarini to'g'ridan-to'g'ri IntelliJ IDEA ichida ishga tushirish vositasi.
+            Backend dasturchilar uchun Uysot Open API va boshqa QA test repozitoriyalarini to'g'ridan-to'g'ri IntelliJ IDEA / PyCharm ichida ishga tushirish uchun universal vosita.
         ]]></description>
         <change-notes><![CDATA[
-            Versiya 1.0.0 yangilanishi.
+            <b>Versiya 1.1.0:</b><br>
+            - Universal ko'p repozitoriyali (Multi-repo) qo'llab-quvvatlash<br>
+            - Git Connect & Sync orqali testlarni avtomatik aniqlash (Dynamic Discovery)<br>
+            - .tester.json konfiguratsiya fayli va avtomatik test skaneri<br>
+            - PyCharm 2026.1 va IntelliJ IDEA 2026.1+ bilan to'liq moslik (build 261)<br>
+            - Universal Bearer token va muhit o'zgaruvchilari (OPEN_API_TOKEN, AUTH_TOKEN, BEARER_TOKEN)
         ]]></change-notes>
-        <idea-version since-build="232" until-build="251.*"/>
+        <idea-version since-build="232"/>
     </plugin>
 </plugins>

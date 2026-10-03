@@ -3,7 +3,6 @@ package uz.uysot.tester.service;
 import com.intellij.openapi.diagnostic.Logger;
 import uz.uysot.tester.model.ApiErrorDetails;
 import uz.uysot.tester.model.TestRunResult;
-import uz.uysot.tester.state.UysotSettingsState;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
@@ -30,13 +29,10 @@ public class TestRunnerService {
         }
     }
 
-    public static void runTests(String pytestArgs, TestRunCallback callback) {
+    public static void runTests(File testDir, String baseUrl, String token, String pytestArgs, TestRunCallback callback) {
         new Thread(() -> {
-            UysotSettingsState settings = UysotSettingsState.getInstance();
-            File testDir = new File(settings.clonePath);
-
-            if (!testDir.exists() || !new File(testDir, ".git").exists()) {
-                callback.onOutput("Xatolik: Test loyihasi hali yuklanmagan. Avval 'Testlarni yuklash/yangilash' tugmasini bosing.");
+            if (testDir == null || !testDir.exists() || !new File(testDir, ".git").exists()) {
+                callback.onOutput("Xatolik: Test repozitoriyasi hali lokalga yuklanmagan. Avval '🔗 Connect & Sync' tugmasini bosing.");
                 callback.onRunCompleted(0, 0, 0, 0);
                 return;
             }
@@ -55,13 +51,24 @@ public class TestRunnerService {
                     streamOutput(venvProc, callback);
                     venvProc.waitFor();
 
-                    callback.onOutput("Kutubxonalar o'rnatilmoqda (pip install -r requirements.txt)...");
-                    Process pipProc = new ProcessBuilder(pythonBin.getAbsolutePath(), "-m", "pip", "install", "-r", "requirements.txt")
-                            .directory(testDir)
-                            .redirectErrorStream(true)
-                            .start();
-                    streamOutput(pipProc, callback);
-                    pipProc.waitFor();
+                    File reqFile = new File(testDir, "requirements.txt");
+                    if (reqFile.exists()) {
+                        callback.onOutput("Kutubxonalar o'rnatilmoqda (pip install -r requirements.txt)...");
+                        Process pipProc = new ProcessBuilder(pythonBin.getAbsolutePath(), "-m", "pip", "install", "-r", "requirements.txt")
+                                .directory(testDir)
+                                .redirectErrorStream(true)
+                                .start();
+                        streamOutput(pipProc, callback);
+                        pipProc.waitFor();
+                    } else {
+                        callback.onOutput("Kutubxonalar o'rnatilmoqda (pytest, requests, allure-pytest)...");
+                        Process pipProc = new ProcessBuilder(pythonBin.getAbsolutePath(), "-m", "pip", "install", "pytest", "requests", "allure-pytest", "python-dotenv")
+                                .directory(testDir)
+                                .redirectErrorStream(true)
+                                .start();
+                        streamOutput(pipProc, callback);
+                        pipProc.waitFor();
+                    }
                 } catch (Exception e) {
                     LOG.error("Failed to setup virtualenv", e);
                     callback.onOutput("Virtual muhit o'rnatishda xatolik: " + e.getMessage());
@@ -72,15 +79,18 @@ public class TestRunnerService {
 
             callback.onOutput("\n=======================================================");
             callback.onOutput("🚀 Testlar boshlanmoqda...");
-            callback.onOutput("🌐 Base URL: " + settings.baseUrl);
+            callback.onOutput("📁 Repozitoriya: " + testDir.getName());
+            callback.onOutput("🌐 Base URL: " + baseUrl);
             callback.onOutput("🎯 Parametrlar: " + pytestArgs);
             callback.onOutput("=======================================================\n");
 
             List<String> cmd = new ArrayList<>();
             cmd.add(pytestBin.getAbsolutePath());
-            for (String arg : pytestArgs.split("\\s+")) {
-                if (!arg.trim().isEmpty()) {
-                    cmd.add(arg.trim());
+            if (pytestArgs != null && !pytestArgs.trim().isEmpty()) {
+                for (String arg : pytestArgs.split("\\s+")) {
+                    if (!arg.trim().isEmpty()) {
+                        cmd.add(arg.trim());
+                    }
                 }
             }
             cmd.add("-v");
@@ -90,15 +100,22 @@ public class TestRunnerService {
             try {
                 ProcessBuilder pb = new ProcessBuilder(cmd);
                 pb.directory(testDir);
-                pb.environment().put("BASE_URL", settings.baseUrl);
-                if (settings.token != null && !settings.token.trim().isEmpty()) {
-                    pb.environment().put("TOKEN", settings.token.trim());
+                if (baseUrl != null && !baseUrl.trim().isEmpty()) {
+                    pb.environment().put("BASE_URL", baseUrl.trim());
+                }
+                if (token != null && !token.trim().isEmpty()) {
+                    String cleanToken = token.trim();
+                    pb.environment().put("TOKEN", cleanToken);
+                    pb.environment().put("OPEN_API_TOKEN", cleanToken);
+                    pb.environment().put("AUTH_TOKEN", cleanToken);
+                    pb.environment().put("BEARER_TOKEN", cleanToken);
                 }
 
                 pb.redirectErrorStream(true);
                 currentProcess = pb.start();
 
-                Pattern testPattern = Pattern.compile("^(pytest_uysot/[^\\s]+)\\s+(PASSED|FAILED|SKIPPED|ERROR)");
+                // Universal test outcome pattern
+                Pattern testPattern = Pattern.compile("^(.+?\\.py(?:::.*?)?)\\s+(PASSED|FAILED|SKIPPED|ERROR)");
 
                 try (BufferedReader reader = new BufferedReader(new InputStreamReader(currentProcess.getInputStream(), StandardCharsets.UTF_8))) {
                     String line;
@@ -127,7 +144,7 @@ public class TestRunnerService {
                 currentProcess.waitFor();
                 currentProcess = null;
 
-                // Parse logs/api_errors.log for detailed failure reasons
+                // Parse logs/api_errors.log for detailed failure reasons if available
                 File errorLog = new File(testDir, "logs/api_errors.log");
                 if (errorLog.exists()) {
                     parseErrorLog(errorLog, testResults);
