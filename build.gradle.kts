@@ -4,7 +4,7 @@ plugins {
 }
 
 group = "uz.uysot"
-version = "1.0.0"
+version = findProperty("version")?.toString() ?: "1.0.0"
 
 repositories {
     mavenCentral()

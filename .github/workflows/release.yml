@@ -48,44 +48,40 @@ jobs:
 
       - name: Plaginni yig'ish (Build Plugin ZIP)
         run: |
-          # plugin.xml dagi versiyani yangilash
-          sed -i "s/<version>.*<\/version>/<version>${VERSION}<\/version>/g" src/main/resources/META-INF/plugin.xml 2>/dev/null || true
-          
-          # Gradle orqali plaginni to'liq yig'ish
-          gradle buildPlugin -Pversion=${VERSION} --no-daemon
-          
-          # Tayyor ZIP faylni reliz uchun nusxalash
-          cp build/distributions/*.zip uysot-api-tester-plugin-${VERSION}.zip
+          gradle clean buildPlugin -Pversion=${VERSION} --no-daemon
+          cp build/distributions/uysot-api-tester-plugin-${VERSION}.zip .
 
       - name: updatePlugins.xml faylini yangilash
         run: |
           DOWNLOAD_URL="https://github.com/${{ github.repository }}/releases/download/v${VERSION}/uysot-api-tester-plugin-${VERSION}.zip"
           
           cat <<EOF > updatePlugins.xml
-          <?xml version="1.0" encoding="UTF-8"?>
-          <plugins>
-              <plugin id="uz.uysot.api.tester"
-                      url="${DOWNLOAD_URL}"
-                      version="${VERSION}">
-                  <name>Uysot Open API Tester</name>
-                  <description><![CDATA[
-                      Backend dasturchilar uchun Uysot Open API avtomatlashtirilgan testlarini to'g'ridan-to'g'ri IntelliJ IDEA ichida ishga tushirish vositasi.
-                  ]]></description>
-                  <change-notes><![CDATA[
-                      Versiya ${VERSION} yangilanishi.
-                  ]]></change-notes>
-                  <idea-version since-build="232" until-build="251.*"/>
-              </plugin>
-          </plugins>
-          EOF
+<?xml version="1.0" encoding="UTF-8"?>
+<plugins>
+    <plugin id="uz.uysot.api.tester"
+            url="${DOWNLOAD_URL}"
+            version="${VERSION}">
+        <name>Uysot Open API Tester</name>
+        <description><![CDATA[
+            Backend dasturchilar uchun Uysot Open API avtomatlashtirilgan testlarini to'g'ridan-to'g'ri IntelliJ IDEA ichida ishga tushirish vositasi.
+        ]]></description>
+        <change-notes><![CDATA[
+            Versiya ${VERSION} yangilanishi.
+        ]]></change-notes>
+        <idea-version since-build="232" until-build="251.*"/>
+    </plugin>
+</plugins>
+EOF
 
       - name: updatePlugins.xml ni git ga yuklash (Commit & Push)
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
+          git checkout main || git checkout -b main origin/main
+          git pull origin main --rebase || true
           git add updatePlugins.xml
           git commit -m "Update plugin repository descriptor to v${VERSION} [skip ci]" || echo "O'zgarish yo'q"
-          git push origin HEAD:main || true
+          git push origin main || true
 
       - name: GitHub Release yaratish
         uses: softprops/action-gh-release@v2
@@ -95,5 +91,5 @@ jobs:
           draft: false
           prerelease: false
           files: |
-            uysot-api-tester-plugin-*.zip
+            uysot-api-tester-plugin-${{ env.VERSION }}.zip
             updatePlugins.xml
