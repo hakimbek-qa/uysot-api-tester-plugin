@@ -23,13 +23,19 @@ public class TestDiscoveryService {
         private final String manifestName;
         private final String authType;
         private final String tokenLabel;
+        private final String aiRulesFile;
 
         public DiscoveryResult(List<TestSuiteOption> suites, String defaultBaseUrl, String manifestName, String authType, String tokenLabel) {
+            this(suites, defaultBaseUrl, manifestName, authType, tokenLabel, null);
+        }
+
+        public DiscoveryResult(List<TestSuiteOption> suites, String defaultBaseUrl, String manifestName, String authType, String tokenLabel, String aiRulesFile) {
             this.suites = suites;
             this.defaultBaseUrl = defaultBaseUrl;
             this.manifestName = manifestName;
             this.authType = authType != null ? authType : "X-Auth-Token";
             this.tokenLabel = tokenLabel != null ? tokenLabel : "X-Auth-Token";
+            this.aiRulesFile = aiRulesFile;
         }
 
         public List<TestSuiteOption> getSuites() {
@@ -50,6 +56,10 @@ public class TestDiscoveryService {
 
         public String getTokenLabel() {
             return tokenLabel;
+        }
+
+        public String getAiRulesFile() {
+            return aiRulesFile;
         }
     }
 
@@ -84,6 +94,7 @@ public class TestDiscoveryService {
             String defaultBaseUrl = json.has("defaultBaseUrl") ? json.get("defaultBaseUrl").getAsString() : null;
             String authType = json.has("authType") ? json.get("authType").getAsString() : "X-Auth-Token";
             String tokenLabel = json.has("tokenLabel") ? json.get("tokenLabel").getAsString() : authType;
+            String aiRulesFile = json.has("aiRulesFile") ? json.get("aiRulesFile").getAsString() : null;
 
             List<TestSuiteOption> suites = new ArrayList<>();
             if (json.has("suites") && json.get("suites").isJsonArray()) {
@@ -129,7 +140,7 @@ public class TestDiscoveryService {
                     }
                 }
 
-                return new DiscoveryResult(suites, defaultBaseUrl, name, authType, tokenLabel);
+                return new DiscoveryResult(suites, defaultBaseUrl, name, authType, tokenLabel, aiRulesFile);
             }
         } catch (Exception e) {
             LOG.warn("Error reading tester config: " + configFile.getAbsolutePath(), e);

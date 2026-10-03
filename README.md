@@ -11,9 +11,11 @@ Backend dasturchilar uchun Uysot Open API va boshqa xizmatlarning avtomatlashtir
    - Repozitoriyadagi testlarni avtomatik aniqlash (Dynamic Discovery) yoki `.tester.json` konfiguratsiyasidan o'qish.
    - Har bir loyiha o'zining alohida kesh papkasiga (`~/.uysot_tester_repos/<repo_nomi>`) tushadi.
 
-2. **🤖 AI Test Prompt Generator:**
-   - Ulangan repozitoriya talablari, arxitekturasi, autentifikatsiya turi (`X-Auth-Token` yoki `Bearer`), yordamchi modullari (`check_success`, `wait_request`) va namunaviy test kodiga asoslangan tayyor AI prompt yaratish.
-   - ChatGPT, GitHub Copilot yoki Claude'ga bir zumda nusxalab yuborish.
+2. **🤖 Loyiha Qoidalariga Asoslangan AI Prompt (AI_TEST_RULES.md):**
+   - Har bir QA repozitoriyasining ildiziga `AI_TEST_RULES.md` joylashtiriladi (yoki `.tester.json` dagi `aiRulesFile` da ko'rsatiladi).
+   - Plagin AI prompt yaratishda to'g'ridan-to'g'ri ushbu fayldagi qoidalarni (fayllar joylashuvi, majburiy importlar, 429 kutish qoidalari, `check_success`, `wait_request`, modul fixture'lari) oladi.
+   - Natijada AI faqat va faqat ushbu loyiha arxitekturasiga mos test kodini yozadi, loyiha tuzilmasidan chetga chiqmaydi.
+   - "AI Prompt" oynasida qoidalar faylini bevosita IDE da ochish va tahrirlash imkoniyati mavjud.
 
 3. **➕ Yangi Test Faylini Yaratish:**
    - Bir tugma orqali yangi test faylini (`test_<nomi>.py`) to'g'ri papkada shablon bilan yaratish.

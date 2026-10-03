@@ -372,12 +372,16 @@ public class UysotToolWindowPanel {
         Object selectedAuth = authTypeComboBox.getSelectedItem();
         String authType = selectedAuth != null ? selectedAuth.toString() : "X-Auth-Token";
 
+        File rulesFile = AiPromptService.findAiRulesFile(repoDir);
         String prompt = AiPromptService.generatePrompt(repoDir, baseUrl, authType);
-        AiPromptDialog dialog = new AiPromptDialog(project, prompt);
+        AiPromptDialog dialog = new AiPromptDialog(project, rulesFile, prompt);
         if (dialog.showAndGet()) {
             consoleTextArea.append(">>> AI Prompt xotiraga nusxalandi (Clipboard).\n");
+            String fileName = rulesFile != null ? rulesFile.getName() : "AI_TEST_RULES.md";
             JOptionPane.showMessageDialog(mainPanel,
-                    "AI Prompt nusxalandi!\nUni ChatGPT, GitHub Copilot yoki Claude'ga yuboring.",
+                    "✅ AI Prompt nusxalandi!\n" +
+                    "Ko'rsatmalar '" + fileName + "' faylidagi loyiha qoidalariga 100% moslangan.\n" +
+                    "Uni ChatGPT, GitHub Copilot yoki Claude'ga yuboring.",
                     "Muvaffaqiyatli", JOptionPane.INFORMATION_MESSAGE);
         }
     }

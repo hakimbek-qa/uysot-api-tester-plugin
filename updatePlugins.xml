@@ -1,14 +1,19 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <plugins>
     <plugin id="uz.uysot.api.tester"
-            url="https://github.com/hakimbek-qa/uysot-api-tester-plugin/releases/download/v1.2.0/uysot-api-tester-plugin-1.2.0.zip"
-            version="1.2.0">
+            url="https://github.com/hakimbek-qa/uysot-api-tester-plugin/releases/download/v1.2.1/uysot-api-tester-plugin-1.2.1.zip"
+            version="1.2.1">
         <name>Uysot Open API Tester</name>
         <description><![CDATA[
-            Backend dasturchilar uchun Uysot Open API avtomatlashtirilgan testlarini to'g'ridan-to'g'ri IntelliJ IDEA ichida ishga tushirish vositasi.
+            Backend dasturchilar uchun Uysot Open API avtomatlashtirilgan testlarini to'g'ridan-to'g'ri IntelliJ IDEA ichida ishga tushirish, AI orqali test yozish va Git'ga push qilish vositasi.
         ]]></description>
         <change-notes><![CDATA[
-            Versiya 1.2.0 yangilanishi.
+            <b>v1.2.1 yangilanishlari:</b>
+            <ul>
+                <li>🤖 <b>Loyiha qoidalari (AI_TEST_RULES.md):</b> Endi AI umumiy shablon bilan emas, balki aynan shu loyiha ichidagi <code>AI_TEST_RULES.md</code> (yoki <code>.tester.json</code> da belgilangan) qoidalar fayli asosida qat'iy yo'naltiriladi.</li>
+                <li>✏️ <b>Qoidalar faylini ochish:</b> "AI Prompt" oynasida loyiha qoidalari faylini IDE muharririda to'g'ridan-to'g'ri ochish va tahrirlash tugmasi qo'shildi.</li>
+                <li>🎯 <b>Loyiha chegarasi:</b> Har bir QA repozitoriyasining o'z qoidalari alohida ishlaydi, dasturchilar loyiha arxitekturasidan chetga chiqmaydi.</li>
+            </ul>
         ]]></change-notes>
         <idea-version since-build="232"/>
     </plugin>

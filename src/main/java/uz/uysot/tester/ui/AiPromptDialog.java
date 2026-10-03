@@ -11,15 +11,20 @@ import uz.uysot.tester.service.AiPromptService;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import java.awt.*;
+import java.io.File;
 
 public class AiPromptDialog extends DialogWrapper {
+    private final Project project;
+    private final File rulesFile;
     private final String promptText;
     private JTextArea textArea;
 
-    public AiPromptDialog(@Nullable Project project, String promptText) {
+    public AiPromptDialog(@Nullable Project project, @Nullable File rulesFile, String promptText) {
         super(project, true);
+        this.project = project;
+        this.rulesFile = rulesFile;
         this.promptText = promptText;
-        setTitle("🤖 AI Test Yozish Prompti");
+        setTitle("🤖 AI Test Qoidalari va Prompt");
         setOKButtonText("📋 Nusxalash (Clipboard)");
         setCancelButtonText("Yopish");
         init();
@@ -28,12 +33,39 @@ public class AiPromptDialog extends DialogWrapper {
     @Override
     protected @Nullable JComponent createCenterPanel() {
         JPanel panel = new JPanel(new BorderLayout(8, 8));
-        panel.setPreferredSize(new Dimension(650, 450));
+        panel.setPreferredSize(new Dimension(680, 480));
 
-        JBLabel infoLabel = new JBLabel("<html><b>AI uchun tayyor ko'rsatma:</b> Quyidagi matnni nusxalab, ChatGPT, GitHub Copilot yoki Claude'ga yuboring. AI ushbu repozitoriya talablariga mos kod yozib beradi.</html>");
-        infoLabel.setBorder(new EmptyBorder(0, 0, 6, 0));
-        panel.add(infoLabel, BorderLayout.NORTH);
+        // Top info header
+        JPanel headerPanel = new JPanel(new BorderLayout(8, 4));
+        headerPanel.setBorder(new EmptyBorder(0, 0, 6, 0));
 
+        if (rulesFile != null && rulesFile.exists()) {
+            JBLabel infoLabel = new JBLabel(String.format(
+                    "<html><b>📌 Loyiha qoidalari fayli:</b> <code>%s</code><br>" +
+                    "<span style='color: gray;'>AI faqat ushbu loyiha qoidalaridan chiqmagan holda test yozadi.</span></html>",
+                    rulesFile.getName()
+            ));
+            headerPanel.add(infoLabel, BorderLayout.CENTER);
+
+            JButton openRulesBtn = new JButton("✏️ " + rulesFile.getName() + " ni ochish");
+            openRulesBtn.setToolTipText("Loyiha qoidalari faylini IDE muharririda ochish va tahrirlash");
+            openRulesBtn.addActionListener(e -> {
+                if (project != null) {
+                    AiPromptService.openFileInEditor(project, rulesFile);
+                }
+            });
+            headerPanel.add(openRulesBtn, BorderLayout.EAST);
+        } else {
+            JBLabel infoLabel = new JBLabel(
+                    "<html><b>⚠️ Loyiha qoidalari fayli (AI_TEST_RULES.md) topilmadi.</b><br>" +
+                    "<span style='color: gray;'>Standart ko'rsatmalar ishlatilmoqda. Loyiha ildiziga <code>AI_TEST_RULES.md</code> qo'shsangiz, AI faqat ushbu loyiha qoidalariga bo'ysunadi.</span></html>"
+            );
+            headerPanel.add(infoLabel, BorderLayout.CENTER);
+        }
+
+        panel.add(headerPanel, BorderLayout.NORTH);
+
+        // Center text area
         textArea = new JTextArea(promptText);
         textArea.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 12));
         textArea.setLineWrap(true);
