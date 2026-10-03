@@ -30,6 +30,11 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
+      - name: Gradle muhitini sozlash
+        uses: gradle/actions/setup-gradle@v3
+        with:
+          gradle-version: '8.7'
+
       - name: Versiyani aniqlash
         id: get_version
         run: |
@@ -43,31 +48,14 @@ jobs:
 
       - name: Plaginni yig'ish (Build Plugin ZIP)
         run: |
-          mkdir -p build/compile build/pack/uysot-api-tester-plugin/lib
-          
-          # IntelliJ Platform Community libraries
-          # We download minimal openapi.jar / platform stub for compilation in CI
-          # Or compile with javac using download or gradle
-          chmod +x ./gradlew 2>/dev/null || true
-          
-          # Standard compile and packaging
-          # Update version in plugin.xml
+          # plugin.xml dagi versiyani yangilash
           sed -i "s/<version>.*<\/version>/<version>${VERSION}<\/version>/g" src/main/resources/META-INF/plugin.xml 2>/dev/null || true
           
-          # Gradle build if wrapper exists, otherwise direct jar
-          if [ -f "./gradlew" ]; then
-            ./gradlew buildPlugin -Pversion=${VERSION}
-            cp build/distributions/*.zip uysot-api-tester-plugin-${VERSION}.zip
-          else
-            # Download IntelliJ Community stub libraries for headless build
-            curl -sL https://cache-redirector.jetbrains.com/intellij-dependencies/org/jetbrains/intellij/deps/intellij-core/241.14494.240/intellij-core-241.14494.240.jar -o intellij-core.jar 2>/dev/null || true
-            mkdir -p build/compile
-            javac -cp "*:src/main/resources" -d build/compile $(find src/main/java -name "*.java") 2>/dev/null || true
-            mkdir -p build/compile/META-INF
-            cp src/main/resources/META-INF/plugin.xml build/compile/META-INF/
-            jar cf build/pack/uysot-api-tester-plugin/lib/uysot-api-tester-plugin-${VERSION}.jar -C build/compile .
-            cd build/pack && zip -r ../../uysot-api-tester-plugin-${VERSION}.zip uysot-api-tester-plugin && cd ../..
-          fi
+          # Gradle orqali plaginni to'liq yig'ish
+          gradle buildPlugin -Pversion=${VERSION} --no-daemon
+          
+          # Tayyor ZIP faylni reliz uchun nusxalash
+          cp build/distributions/*.zip uysot-api-tester-plugin-${VERSION}.zip
 
       - name: updatePlugins.xml faylini yangilash
         run: |

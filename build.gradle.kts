@@ -17,6 +17,7 @@ dependencies {
 intellij {
     version.set("2024.1")
     type.set("IC")
+    plugins.set(listOf("git4idea"))
     downloadSources.set(false)
 }
 
