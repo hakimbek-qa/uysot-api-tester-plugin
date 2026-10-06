@@ -1,14 +1,19 @@
 <?xml version='1.0' encoding="UTF-8"?>
 <plugins>
     <plugin id="uz.uysot.api.tester"
-            url="https://github.com/hakimbek-qa/uysot-api-tester-plugin/releases/download/v1.2.2/uysot-api-tester-plugin-1.2.2.zip"
-            version="1.2.2">
+            url="https://github.com/hakimbek-qa/uysot-api-tester-plugin/releases/download/v1.2.3/uysot-api-tester-plugin-1.2.3.zip"
+            version="1.2.3">
         <name>Uysot Open API Tester</name>
         <description><![CDATA[
-            Backend dasturchilar uchun Uysot Open API avtomatlashtirilgan testlarini to'g'ridan-to'g'ri IntelliJ IDEA ichida ishga tushirish vositasi.
+            Backend dasturchilar uchun Uysot Open API avtomatlashtirilgan testlarini to'g'ridan-to'g'ri IntelliJ IDEA ichida ishga tushirish, AI orqali test yozish va Git'ga push qilish vositasi.
         ]]></description>
         <change-notes><![CDATA[
-            Versiya 1.2.2 yangilanishi.
+            <b>v1.2.3 yangilanishlari:</b>
+            <ul>
+                <li>🪟 <b>Windows to'liq qo'llab-quvvatlandi:</b> Windows tizimlarida Python (python.exe, py.exe, python3) va virtual muhit (.venv/Scripts) avtomatik aniqlanishi to'liq sozlandi.</li>
+                <li>🛠 <b>Avtomatik tuzatish:</b> Windows'da avval chala yoki xato o'rnatilgan .venv papkalarini avtomatik tozalab, to'g'ri qayta yaratish imkoniyati qo'shildi.</li>
+                <li>🔤 <b>UTF-8 Enkodlash:</b> Windows konsolida o'zbekcha belgilar va emojilar to'g'ri chiqishi uchun PYTHONIOENCODING majburiy UTF-8 ga ulandi.</li>
+            </ul>
         ]]></change-notes>
         <idea-version since-build="232"/>
     </plugin>

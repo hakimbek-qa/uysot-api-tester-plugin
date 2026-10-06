@@ -42,6 +42,16 @@ Backend dasturchilar uchun Uysot Open API va boshqa xizmatlarning avtomatlashtir
 
 ---
 
+## 🪟 Windows Foydalanuvchilari Uchun Eslatma
+
+Plagin Windows tizimlarida virtual muhitni (`.venv\Scripts`) to'liq avtomatik yaratadi.
+Kompyuteringizda Python 3 o'rnatilgan bo'lishi lozim:
+1. Agar o'rnatilmagan bo'lsa, [python.org](https://www.python.org/downloads/) saytidan yuklab oling.
+2. O'rnatish paytida eng pastdagi **"Add python.exe to PATH"** katakchasiga albatta belgi qo'ying!
+3. O'rnatgach, IDE ni qayta ishga tushirsangiz kifoya.
+
+---
+
 ## 🔌 O'rnatish va Avtomatik Yangilanishlar (Custom Repository)
 
 IntelliJ IDEA yoki PyCharm da:

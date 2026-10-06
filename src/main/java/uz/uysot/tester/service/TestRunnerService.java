@@ -22,11 +22,160 @@ public class TestRunnerService {
         void onRunCompleted(int total, int passed, int failed, int skipped);
     }
 
+    public static boolean isWindows() {
+        return System.getProperty("os.name", "").toLowerCase().contains("win");
+    }
+
     public static synchronized void stopCurrentRun() {
         if (currentProcess != null && currentProcess.isAlive()) {
             currentProcess.destroyForcibly();
             currentProcess = null;
         }
+    }
+
+    public static File getVenvPython(File venvDir) {
+        if (venvDir == null) return null;
+        boolean win = isWindows();
+
+        if (win) {
+            File winExe = new File(venvDir, "Scripts/python.exe");
+            if (winExe.exists()) return winExe;
+            File winPy = new File(venvDir, "Scripts/python");
+            if (winPy.exists()) return winPy;
+        }
+
+        File unixPy = new File(venvDir, "bin/python");
+        if (unixPy.exists()) return unixPy;
+        File unixPy3 = new File(venvDir, "bin/python3");
+        if (unixPy3.exists()) return unixPy3;
+        File unixPyExe = new File(venvDir, "bin/python.exe");
+        if (unixPyExe.exists()) return unixPyExe;
+
+        // Fallback default according to OS
+        return win ? new File(venvDir, "Scripts/python.exe") : new File(venvDir, "bin/python");
+    }
+
+    public static File getVenvPytest(File venvDir) {
+        if (venvDir == null) return null;
+        boolean win = isWindows();
+
+        if (win) {
+            File winExe = new File(venvDir, "Scripts/pytest.exe");
+            if (winExe.exists()) return winExe;
+            File winPytest = new File(venvDir, "Scripts/pytest");
+            if (winPytest.exists()) return winPytest;
+        }
+
+        File unixPytest = new File(venvDir, "bin/pytest");
+        if (unixPytest.exists()) return unixPytest;
+        File unixPytestExe = new File(venvDir, "bin/pytest.exe");
+        if (unixPytestExe.exists()) return unixPytestExe;
+
+        return win ? new File(venvDir, "Scripts/pytest.exe") : new File(venvDir, "bin/pytest");
+    }
+
+    public static List<String> findSystemPython() {
+        boolean win = isWindows();
+        List<List<String>> candidates = new ArrayList<>();
+
+        if (win) {
+            candidates.add(Collections.singletonList("python"));
+            candidates.add(Arrays.asList("py", "-3"));
+            candidates.add(Collections.singletonList("py"));
+            candidates.add(Collections.singletonList("python3"));
+
+            // Scan standard Windows installation paths if PATH is not configured
+            List<File> searchDirs = new ArrayList<>();
+            String localAppData = System.getenv("LOCALAPPDATA");
+            if (localAppData != null) {
+                searchDirs.add(new File(localAppData, "Programs/Python"));
+            }
+            String appData = System.getenv("APPDATA");
+            if (appData != null) {
+                searchDirs.add(new File(appData, "Local/Programs/Python"));
+            }
+            searchDirs.add(new File("C:/Program Files/Python"));
+            searchDirs.add(new File("C:/"));
+
+            for (File baseDir : searchDirs) {
+                if (baseDir.exists() && baseDir.isDirectory()) {
+                    File[] subDirs = baseDir.listFiles();
+                    if (subDirs != null) {
+                        for (File sub : subDirs) {
+                            if (sub.isDirectory() && sub.getName().toLowerCase().startsWith("python3")) {
+                                File exe = new File(sub, "python.exe");
+                                if (exe.exists()) {
+                                    candidates.add(Collections.singletonList(exe.getAbsolutePath()));
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        } else {
+            candidates.add(Collections.singletonList("python3"));
+            candidates.add(Collections.singletonList("python"));
+            candidates.add(Collections.singletonList("/opt/homebrew/bin/python3"));
+            candidates.add(Collections.singletonList("/usr/local/bin/python3"));
+            candidates.add(Collections.singletonList("/usr/bin/python3"));
+        }
+
+        for (List<String> cmd : candidates) {
+            if (verifyPython3(cmd)) {
+                return cmd;
+            }
+        }
+
+        return null;
+    }
+
+    private static boolean verifyPython3(List<String> cmd) {
+        try {
+            List<String> testCmd = new ArrayList<>(cmd);
+            testCmd.add("--version");
+            Process p = new ProcessBuilder(testCmd).start();
+            StringBuilder sb = new StringBuilder();
+            try (BufferedReader r = new BufferedReader(new InputStreamReader(p.getInputStream(), StandardCharsets.UTF_8))) {
+                String line;
+                while ((line = r.readLine()) != null) sb.append(line).append(" ");
+            }
+            try (BufferedReader r = new BufferedReader(new InputStreamReader(p.getErrorStream(), StandardCharsets.UTF_8))) {
+                String line;
+                while ((line = r.readLine()) != null) sb.append(line).append(" ");
+            }
+            int code = p.waitFor();
+            if (code == 0) {
+                String output = sb.toString().trim();
+                return output.contains("Python 3") || output.contains("Python 3.");
+            }
+        } catch (Exception ignored) {
+        }
+        return false;
+    }
+
+    private static boolean isPytestInstalled(File pythonBin) {
+        if (pythonBin == null || !pythonBin.exists()) return false;
+        try {
+            Process p = new ProcessBuilder(pythonBin.getAbsolutePath(), "-m", "pytest", "--version").start();
+            return p.waitFor() == 0;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    private static void deleteDirectory(File dir) {
+        if (dir == null || !dir.exists()) return;
+        File[] files = dir.listFiles();
+        if (files != null) {
+            for (File f : files) {
+                if (f.isDirectory()) {
+                    deleteDirectory(f);
+                } else {
+                    f.delete();
+                }
+            }
+        }
+        dir.delete();
     }
 
     public static void runTests(File testDir, String baseUrl, String token, String pytestArgs, TestRunCallback callback) {
@@ -38,43 +187,112 @@ public class TestRunnerService {
             }
 
             File venvDir = new File(testDir, ".venv");
-            File pythonBin = new File(venvDir, "bin/python");
-            File pytestBin = new File(venvDir, "bin/pytest");
+            File pythonBin = getVenvPython(venvDir);
+            File pytestBin = getVenvPytest(venvDir);
 
-            if (!pytestBin.exists()) {
+            boolean isEnvReady = venvDir.exists() && pythonBin != null && pythonBin.exists() &&
+                    (pytestBin != null && pytestBin.exists() || isPytestInstalled(pythonBin));
+
+            if (!isEnvReady) {
+                // If .venv exists but python binary is missing or broken, clean it up
+                if (venvDir.exists() && (pythonBin == null || !pythonBin.exists())) {
+                    callback.onOutput("Eski yoki chala o'rnatilgan .venv papkasi tozalanmoqda...");
+                    deleteDirectory(venvDir);
+                }
+
+                List<String> systemPython = findSystemPython();
+                if (systemPython == null || systemPython.isEmpty()) {
+                    String osHelp = isWindows()
+                            ? "Windows tizimida Python 3 topilmadi!\n"
+                            + "Tavsiya:\n"
+                            + "1. https://www.python.org/downloads/ saytidan Python 3 ni yuklab oling.\n"
+                            + "2. O'rnatish boshlanganda 'Add python.exe to PATH' katakchasini ALBATTA belgilang!\n"
+                            + "3. O'rnatgach, IntelliJ IDEA / PyCharm ni qayta ishga tushiring."
+                            : "Tizimda Python 3 topilmadi! Iltimos, Python 3 ni o'rnating.";
+                    callback.onOutput("❌ Xatolik: " + osHelp);
+                    callback.onRunCompleted(0, 0, 0, 0);
+                    return;
+                }
+
                 callback.onOutput("Python virtual muhit yaratilmoqda (.venv)...");
+                callback.onOutput("Ishlatilayotgan Python: " + String.join(" ", systemPython));
+
                 try {
-                    Process venvProc = new ProcessBuilder("python3", "-m", "venv", ".venv")
+                    List<String> venvCmd = new ArrayList<>(systemPython);
+                    venvCmd.add("-m");
+                    venvCmd.add("venv");
+                    venvCmd.add(".venv");
+
+                    Process venvProc = new ProcessBuilder(venvCmd)
                             .directory(testDir)
                             .redirectErrorStream(true)
                             .start();
                     streamOutput(venvProc, callback);
-                    venvProc.waitFor();
+                    int venvExit = venvProc.waitFor();
+
+                    if (venvExit != 0) {
+                        callback.onOutput("❌ Xatolik: Virtual muhit yaratishda xato yuz berdi (Exit code: " + venvExit + ")");
+                        callback.onRunCompleted(0, 0, 0, 0);
+                        return;
+                    }
+
+                    // Re-resolve python binary inside newly created .venv
+                    pythonBin = getVenvPython(venvDir);
+                    if (pythonBin == null || !pythonBin.exists()) {
+                        callback.onOutput("❌ Xatolik: Virtual muhit yaratildi, ammo python fayli topilmadi: " +
+                                (pythonBin != null ? pythonBin.getAbsolutePath() : "null"));
+                        callback.onRunCompleted(0, 0, 0, 0);
+                        return;
+                    }
 
                     File reqFile = new File(testDir, "requirements.txt");
+                    List<String> pipCmd = new ArrayList<>();
+                    pipCmd.add(pythonBin.getAbsolutePath());
+                    pipCmd.add("-m");
+                    pipCmd.add("pip");
+                    pipCmd.add("install");
+
                     if (reqFile.exists()) {
                         callback.onOutput("Kutubxonalar o'rnatilmoqda (pip install -r requirements.txt)...");
-                        Process pipProc = new ProcessBuilder(pythonBin.getAbsolutePath(), "-m", "pip", "install", "-r", "requirements.txt")
-                                .directory(testDir)
-                                .redirectErrorStream(true)
-                                .start();
-                        streamOutput(pipProc, callback);
-                        pipProc.waitFor();
+                        pipCmd.add("-r");
+                        pipCmd.add("requirements.txt");
                     } else {
-                        callback.onOutput("Kutubxonalar o'rnatilmoqda (pytest, requests, allure-pytest)...");
-                        Process pipProc = new ProcessBuilder(pythonBin.getAbsolutePath(), "-m", "pip", "install", "pytest", "requests", "allure-pytest", "python-dotenv")
-                                .directory(testDir)
-                                .redirectErrorStream(true)
-                                .start();
-                        streamOutput(pipProc, callback);
-                        pipProc.waitFor();
+                        callback.onOutput("Kutubxonalar o'rnatilmoqda (pytest, requests, allure-pytest, python-dotenv)...");
+                        pipCmd.add("pytest");
+                        pipCmd.add("requests");
+                        pipCmd.add("allure-pytest");
+                        pipCmd.add("python-dotenv");
                     }
+
+                    Process pipProc = new ProcessBuilder(pipCmd)
+                            .directory(testDir)
+                            .redirectErrorStream(true)
+                            .start();
+                    streamOutput(pipProc, callback);
+                    int pipExit = pipProc.waitFor();
+
+                    if (pipExit != 0) {
+                        callback.onOutput("❌ Xatolik: pip kutubxonalarni o'rnatishda xatolik yuz berdi (Exit code: " + pipExit + ")");
+                        callback.onRunCompleted(0, 0, 0, 0);
+                        return;
+                    }
+
+                    callback.onOutput("✅ Virtual muhit va kutubxonalar muvaffaqiyatli tayyorlandi!\n");
+
                 } catch (Exception e) {
                     LOG.error("Failed to setup virtualenv", e);
-                    callback.onOutput("Virtual muhit o'rnatishda xatolik: " + e.getMessage());
+                    callback.onOutput("Virtual muhit o'rnatishda kutilmagan xatolik: " + e.getMessage());
                     callback.onRunCompleted(0, 0, 0, 0);
                     return;
                 }
+            }
+
+            // Always resolve python binary for running tests
+            pythonBin = getVenvPython(venvDir);
+            if (pythonBin == null || !pythonBin.exists()) {
+                callback.onOutput("❌ Xatolik: Python interpretatori topilmadi (.venv/Scripts/python.exe yoki .venv/bin/python)");
+                callback.onRunCompleted(0, 0, 0, 0);
+                return;
             }
 
             callback.onOutput("\n=======================================================");
@@ -82,10 +300,13 @@ public class TestRunnerService {
             callback.onOutput("📁 Repozitoriya: " + testDir.getName());
             callback.onOutput("🌐 Base URL: " + baseUrl);
             callback.onOutput("🎯 Parametrlar: " + pytestArgs);
+            callback.onOutput("🐍 Python: " + pythonBin.getAbsolutePath());
             callback.onOutput("=======================================================\n");
 
             List<String> cmd = new ArrayList<>();
-            cmd.add(pytestBin.getAbsolutePath());
+            cmd.add(pythonBin.getAbsolutePath());
+            cmd.add("-m");
+            cmd.add("pytest");
             if (pytestArgs != null && !pytestArgs.trim().isEmpty()) {
                 for (String arg : pytestArgs.split("\\s+")) {
                     if (!arg.trim().isEmpty()) {
@@ -110,6 +331,10 @@ public class TestRunnerService {
                     pb.environment().put("AUTH_TOKEN", cleanToken);
                     pb.environment().put("BEARER_TOKEN", cleanToken);
                 }
+
+                // Force UTF-8 encoding across Windows, Mac and Linux
+                pb.environment().put("PYTHONIOENCODING", "utf-8");
+                pb.environment().put("PYTHONUTF8", "1");
 
                 pb.redirectErrorStream(true);
                 currentProcess = pb.start();

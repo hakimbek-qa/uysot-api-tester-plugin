@@ -23,7 +23,7 @@ import java.util.regex.Pattern;
 
 public class UpdateCheckerService {
     private static final Logger LOG = Logger.getInstance(UpdateCheckerService.class);
-    public static final String CURRENT_VERSION = "1.2.2";
+    public static final String CURRENT_VERSION = "1.2.3";
     public static final String UPDATE_XML_URL = "https://raw.githubusercontent.com/hakimbek-qa/uysot-api-tester-plugin/main/updatePlugins.xml";
     public static final String RELEASES_PAGE_URL = "https://github.com/hakimbek-qa/uysot-api-tester-plugin/releases";
 
