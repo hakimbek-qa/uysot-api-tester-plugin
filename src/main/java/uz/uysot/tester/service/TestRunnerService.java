@@ -134,10 +134,10 @@ public class TestRunnerService {
                 }
             }
         } else {
-            candidates.add(Collections.singletonList("python3"));
-            candidates.add(Collections.singletonList("python"));
             candidates.add(Collections.singletonList("/opt/homebrew/bin/python3"));
             candidates.add(Collections.singletonList("/usr/local/bin/python3"));
+            candidates.add(Collections.singletonList("python3"));
+            candidates.add(Collections.singletonList("python"));
             candidates.add(Collections.singletonList("/usr/bin/python3"));
         }
 
@@ -381,6 +381,7 @@ public class TestRunnerService {
                 }
             }
             cmd.add("-v");
+            cmd.add("--disable-warnings");
 
             Map<String, TestRunResult> testResults = new LinkedHashMap<>();
 
@@ -401,6 +402,9 @@ public class TestRunnerService {
                 // Force UTF-8 encoding across Windows, Mac and Linux
                 pb.environment().put("PYTHONIOENCODING", "utf-8");
                 pb.environment().put("PYTHONUTF8", "1");
+
+                // Silence legacy LibreSSL / OpenSSL warnings from urllib3
+                pb.environment().put("PYTHONWARNINGS", "ignore:urllib3 v2 only supports OpenSSL:Warning");
 
                 pb.redirectErrorStream(true);
                 currentProcess = pb.start();
