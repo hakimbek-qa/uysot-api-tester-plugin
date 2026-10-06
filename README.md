@@ -42,13 +42,18 @@ Backend dasturchilar uchun Uysot Open API va boshqa xizmatlarning avtomatlashtir
 
 ---
 
-## 🪟 Windows Foydalanuvchilari Uchun Eslatma
+## 🪟 Windows Foydalanuvchilari Uchun (Avtomatik Python O'rnatish)
 
-Plagin Windows tizimlarida virtual muhitni (`.venv\Scripts`) to'liq avtomatik yaratadi.
-Kompyuteringizda Python 3 o'rnatilgan bo'lishi lozim:
-1. Agar o'rnatilmagan bo'lsa, [python.org](https://www.python.org/downloads/) saytidan yuklab oling.
-2. O'rnatish paytida eng pastdagi **"Add python.exe to PATH"** katakchasiga albatta belgi qo'ying!
-3. O'rnatgach, IDE ni qayta ishga tushirsangiz kifoya.
+Plagin Windows tizimlarida Python mavjudligini avtomatik tekshiradi. Agar Python 3 topilmasa, plagin uni o'zi o'rnatib berishni taklif qiladi:
+
+1. **⚡ 1-variant: Winget orqali avtomatik o'rnatish (Tavsiya etiladi):**
+   - Windows 10/11 dagi Windows Package Manager orqali Python 3.12 ni fonda (background) avtomatik o'rnatadi.
+   - Hech qanday qo'lda fayl yuklab olish yoki sozlash talab qilinmaydi.
+2. **📥 2-variant: python.org rasmiy installerini yuklab olish:**
+   - Plagin rasmiy `python-3.12.8-amd64.exe` faylini to'g'ridan-to'g'ri yuklab oladi.
+   - `PrependPath=1` parametri bilan ishga tushiradi (ya'ni "Add python.exe to PATH" katakchasi avtomatik yoqilgan bo'ladi).
+
+O'rnatish tugagach, plagin yangi o'rnatilgan Python'ni avtomatik aniqlaydi va virtual muhitni (`.venv\Scripts`) yaratib, testlarni ishga tushiradi.
 
 ---
 

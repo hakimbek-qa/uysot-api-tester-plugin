@@ -44,6 +44,7 @@ public class UysotToolWindowPanel {
     private JBList<TestRunResult> resultList;
     private JTextArea detailTextArea;
     private JTextArea consoleTextArea;
+    private JBTabbedPane tabbedPane;
 
     public UysotToolWindowPanel(Project project) {
         this.project = project;
@@ -191,7 +192,7 @@ public class UysotToolWindowPanel {
         mainPanel.add(topPanel, BorderLayout.NORTH);
 
         // 2. Tabs: Results & Console
-        JBTabbedPane tabbedPane = new JBTabbedPane();
+        tabbedPane = new JBTabbedPane();
 
         // Tab 1: Test Results
         JSplitPane splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT);
@@ -512,6 +513,10 @@ public class UysotToolWindowPanel {
         File repoDir = UysotSettingsState.getRepoDirectory(repoUrl);
 
         UysotSettingsState settings = UysotSettingsState.getInstance();
+        File venvDir = new File(repoDir, ".venv");
+        if (!venvDir.exists()) {
+            tabbedPane.setSelectedIndex(1);
+        }
 
         setRunningState(true, "Testlar bajarilmoqda...");
 
@@ -541,6 +546,9 @@ public class UysotToolWindowPanel {
                     String statusText = String.format("Yakunlandi: %d ta (✅ %d o'tdi, ❌ %d yiqildi, ⚠️ %d o'tkazildi)",
                             total, passed, failed, skipped);
                     setRunningState(false, statusText);
+                    if (total > 0) {
+                        tabbedPane.setSelectedIndex(0);
+                    }
                 });
             }
         });

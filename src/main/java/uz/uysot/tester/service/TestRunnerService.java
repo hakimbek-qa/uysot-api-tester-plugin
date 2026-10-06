@@ -84,6 +84,18 @@ public class TestRunnerService {
             candidates.add(Collections.singletonList("py"));
             candidates.add(Collections.singletonList("python3"));
 
+            // Check py.exe in standard Windows locations
+            File py1 = new File("C:/Windows/py.exe");
+            if (py1.exists()) {
+                candidates.add(Arrays.asList(py1.getAbsolutePath(), "-3"));
+                candidates.add(Collections.singletonList(py1.getAbsolutePath()));
+            }
+            File py2 = new File("C:/Windows/System32/py.exe");
+            if (py2.exists()) {
+                candidates.add(Arrays.asList(py2.getAbsolutePath(), "-3"));
+                candidates.add(Collections.singletonList(py2.getAbsolutePath()));
+            }
+
             // Scan standard Windows installation paths if PATH is not configured
             List<File> searchDirs = new ArrayList<>();
             String localAppData = System.getenv("LOCALAPPDATA");
@@ -94,7 +106,14 @@ public class TestRunnerService {
             if (appData != null) {
                 searchDirs.add(new File(appData, "Local/Programs/Python"));
             }
+            String userHome = System.getProperty("user.home");
+            if (userHome != null) {
+                searchDirs.add(new File(userHome, "AppData/Local/Programs/Python"));
+            }
+            searchDirs.add(new File("C:/Program Files"));
+            searchDirs.add(new File("C:/Program Files (x86)"));
             searchDirs.add(new File("C:/Program Files/Python"));
+            searchDirs.add(new File("C:/ProgramData/chocolatey/bin"));
             searchDirs.add(new File("C:/"));
 
             for (File baseDir : searchDirs) {
@@ -107,6 +126,8 @@ public class TestRunnerService {
                                 if (exe.exists()) {
                                     candidates.add(Collections.singletonList(exe.getAbsolutePath()));
                                 }
+                            } else if (sub.isFile() && "python.exe".equalsIgnoreCase(sub.getName())) {
+                                candidates.add(Collections.singletonList(sub.getAbsolutePath()));
                             }
                         }
                     }
@@ -202,16 +223,61 @@ public class TestRunnerService {
 
                 List<String> systemPython = findSystemPython();
                 if (systemPython == null || systemPython.isEmpty()) {
-                    String osHelp = isWindows()
-                            ? "Windows tizimida Python 3 topilmadi!\n"
-                            + "Tavsiya:\n"
-                            + "1. https://www.python.org/downloads/ saytidan Python 3 ni yuklab oling.\n"
-                            + "2. O'rnatish boshlanganda 'Add python.exe to PATH' katakchasini ALBATTA belgilang!\n"
-                            + "3. O'rnatgach, IntelliJ IDEA / PyCharm ni qayta ishga tushiring."
-                            : "Tizimda Python 3 topilmadi! Iltimos, Python 3 ni o'rnating.";
-                    callback.onOutput("❌ Xatolik: " + osHelp);
-                    callback.onRunCompleted(0, 0, 0, 0);
-                    return;
+                    if (isWindows()) {
+                        callback.onOutput("⚠️ Windows tizimida Python 3 topilmadi.");
+                        callback.onOutput("Python o'rnatish tanlovi ochilmoqda...");
+
+                        int choice = PythonInstallerService.promptInstallationChoice(null);
+
+                        boolean installAttempted = false;
+                        if (choice == PythonInstallerService.CHOICE_WINGET) {
+                            installAttempted = true;
+                            callback.onOutput("\n=======================================================");
+                            callback.onOutput("⚡ 1-variant tanlandi: Winget orqali avtomatik o'rnatish");
+                            callback.onOutput("=======================================================");
+                            boolean ok = PythonInstallerService.installViaWinget(callback::onOutput);
+                            if (!ok) {
+                                callback.onOutput("\n⚠️ Winget o'rnatish yakunlanmadi. 2-variant (rasmiy installer) sinab ko'rilmoqda...");
+                                PythonInstallerService.downloadAndInstallOfficial(callback::onOutput);
+                            }
+                        } else if (choice == PythonInstallerService.CHOICE_OFFICIAL_INSTALLER) {
+                            installAttempted = true;
+                            callback.onOutput("\n=======================================================");
+                            callback.onOutput("📥 2-variant tanlandi: python.org rasmiy installerini yuklab olish");
+                            callback.onOutput("=======================================================");
+                            PythonInstallerService.downloadAndInstallOfficial(callback::onOutput);
+                        } else {
+                            callback.onOutput("❌ Foydalanuvchi tomonidan Python o'rnatish bekor qilindi.");
+                            callback.onOutput("Python 3 ni qo'lda o'rnatish uchun: https://www.python.org/downloads/");
+                            callback.onOutput("Eslatma: O'rnatish paytida 'Add python.exe to PATH' belgisini qo'yishni unutmang.");
+                            callback.onRunCompleted(0, 0, 0, 0);
+                            return;
+                        }
+
+                        if (installAttempted) {
+                            callback.onOutput("\n🔍 Yangi o'rnatilgan Python tekshirilmoqda...");
+                            try {
+                                Thread.sleep(2000);
+                            } catch (InterruptedException ignored) {}
+                            systemPython = findSystemPython();
+
+                            if (systemPython != null && !systemPython.isEmpty()) {
+                                callback.onOutput("🎉 Python muvaffaqiyatli aniqlandi: " + String.join(" ", systemPython) + "\n");
+                            } else {
+                                callback.onOutput("❌ Python o'rnatildi, biroq tizim muhit o'zgaruvchilarini (PATH) yangilash uchun " +
+                                        "IntelliJ IDEA ni qayta ishga tushirish (Restart IDE) talab etilishi mumkin.");
+                                callback.onRunCompleted(0, 0, 0, 0);
+                                return;
+                            }
+                        }
+                    } else {
+                        String osHelp = "Tizimda Python 3 topilmadi! Iltimos, Python 3 ni o'rnating.\n"
+                                + "• macOS: brew install python3\n"
+                                + "• Linux: sudo apt install python3 python3-venv python3-pip";
+                        callback.onOutput("❌ Xatolik: " + osHelp);
+                        callback.onRunCompleted(0, 0, 0, 0);
+                        return;
+                    }
                 }
 
                 callback.onOutput("Python virtual muhit yaratilmoqda (.venv)...");
