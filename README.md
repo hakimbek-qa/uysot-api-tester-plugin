@@ -57,8 +57,14 @@ O'rnatish tugagach, plagin yangi o'rnatilgan Python'ni avtomatik aniqlaydi va vi
 
 ---
 
-## 🔌 O'rnatish va Avtomatik Yangilanishlar (Custom Repository)
+## 🔌 O'rnatish va Avtomatik Yangilanishlar (Direct Auto-Update)
 
+Plagin **istalgan eski versiyadan to'g'ridan-to'g'ri eng so'nggi versiyaga 1 ta tugma orqali o'tishni** qo'llab-quvvatlaydi. Oraliq versiyalarni bosqichma-bosqich o'rnatish shart emas!
+
+* **Plagin ichidan avtomatik yangilash (Tavsiya etiladi):**
+  Plagin boshqaruv panelidagi **`ℹ️ v...`** tugmasini bosing va **`⚡ Eng so'nggi versiyaga yangilash (Avtomatik)`** ni tanlang. Plagin yangi versiyani o'zi fonda yuklab olib, o'rnatadi va IDE ni qayta ishga tushirishni taklif qiladi.
+
+* **Custom Repository orqali o'rnatish:**
 IntelliJ IDEA yoki PyCharm da:
 1. **Settings** (`Cmd + ,` yoki `Ctrl + Alt + S`) $\rightarrow$ **Plugins** bo'limiga o'ting.
 2. Tepadagi ⚙️ (tishli g'ildirak) belgisini bosing $\rightarrow$ **Manage Plugin Repositories...** ni tanlang.
@@ -69,7 +75,7 @@ IntelliJ IDEA yoki PyCharm da:
 4. **OK** tugmasini bosing.
 5. **Plugins $\rightarrow$ Marketplace** tabida:
    `Uysot Open API Tester`
-   deb qidiring va **Install** tugmasini bosing!
+   deb qidiring va **Install** (yoki **Update**) tugmasini bosing!
 6. IDE ni qayta ishga tushiring (Restart IDE).
 
 ---
